@@ -1,4 +1,4 @@
-/* src/app/login-page/login-page.component.css */
+/* src/app/register-page/register-page.component.css */
 
 :host {
     display: block;
@@ -7,7 +7,7 @@
     box-sizing: border-box;
   }
   
-  .login-container {
+  .register-container {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -16,30 +16,39 @@
     padding: 1rem;
   }
   
-  .login-card {
+  .register-card {
     background: white;
     padding: 40px;
     width: 100%;
-    max-width: 400px;
+    max-width: 450px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
   
-  .login-header h1 {
+  .register-header h1 {
     margin: 0;
     color: #2c3e50;
     font-size: 24px;
     font-weight: 700;
   }
   
-  .login-header p {
+  .register-header p {
     color: #7f8c8d;
     margin-top: 5px;
     font-size: 14px;
   }
   
+  .form-row {
+    display: flex;
+    gap: 15px;
+  }
+  
+  .form-row .form-group {
+    flex: 1;
+  }
+  
   .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
   }
   
   .form-group label {
@@ -65,34 +74,10 @@
     outline: none;
   }
   
-  .form-group input.error-input {
-    border-color: #e74c3c;
-  }
-  
-  .validation-error {
-    color: #e74c3c;
-    font-size: 12px;
-    margin-top: 5px;
-    display: block;
-  }
-  
-  .form-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    font-size: 13px;
-  }
-  
-  .forgot-link {
-    color: #3498db;
-    text-decoration: none;
-  }
-  
-  .login-btn {
+  .register-btn {
     width: 100%;
     padding: 12px;
-    background-color: #2c3e50;
+    background-color: #27ae60;
     color: white;
     border: none;
     border-radius: 4px;
@@ -100,41 +85,17 @@
     cursor: pointer;
     transition: background 0.3s;
     font-weight: 600;
+    margin-top: 10px;
   }
   
-  .login-btn:hover:not(:disabled) {
-    background-color: #34495e;
+  .register-btn:hover:not(:disabled) {
+    background-color: #219150;
   }
   
-  .login-btn:disabled {
+  .register-btn:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
     opacity: 0.7;
-  }
-  
-  .error-banner {
-    background-color: #fdecea;
-    color: #c0392b;
-    padding: 12px;
-    border-radius: 4px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    border: 1px solid #e6b0aa;
-  }
-  
-  .login-footer {
-    margin-top: 20px;
-    text-align: center;
-    font-size: 12px;
-    color: #95a5a6;
-  }
-  
-  .checkbox-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #7f8c8d;
-    cursor: pointer;
   }
   
   .login-link {
@@ -152,4 +113,31 @@
   
   .login-link a:hover {
     text-decoration: underline;
+  }
+  
+  .error-banner {
+    background-color: #fdecea;
+    color: #c0392b;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    border: 1px solid #e6b0aa;
+  }
+  
+  .success-banner {
+    background-color: #eafaf1;
+    color: #27ae60;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    border: 1px solid #abebc6;
+  }
+  
+  .register-footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #95a5a6;
   }

@@ -2,28 +2,35 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService, LoginResponse } from './auth.service';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.css'
 })
 export class LoginPageComponent {
-  loginForm: FormGroup;
+  loginForm!: FormGroup;
   isLoading = false;
   errorMessage: string | null = null;
 
   constructor(
     private fb: FormBuilder,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {
+    // Check if already logged in
+    if (this.authService.isLoggedIn()) {
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+
     this.loginForm = this.fb.group({
-      companyCode: [''],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required]],
       rememberMe: [false]
     });
   }
@@ -37,19 +44,20 @@ export class LoginPageComponent {
     this.isLoading = true;
     this.errorMessage = null;
 
-    const { email, password, companyCode } = this.loginForm.value;
+    const { email, password } = this.loginForm.value;
 
-    this.authService.login(email, password, companyCode).subscribe({
+    this.authService.login(email, password).subscribe({
       next: (response: LoginResponse) => {
         this.isLoading = false;
         if (response.success) {
           console.log('Login Success:', response.user);
-          alert(`Welcome, ${response.user?.name}!`);
+          alert(`Welcome back, ${response.user?.firstName}!`);
+          this.router.navigate(['/dashboard']);
         } else {
           this.errorMessage = response.message || 'Login failed';
         }
       },
-      error: (err: Error) => {  // Explicitly typed as Error
+      error: (err: Error) => {
         this.isLoading = false;
         this.errorMessage = 'An unexpected error occurred.';
       }

@@ -1,0 +1,99 @@
+<!-- src/app/register-page/register-page.component.html -->
+
+<div class="register-container">
+    <div class="register-card">
+      <div class="register-header">
+        <h1>Create Account</h1>
+        <p>Join PayrollSys today</p>
+      </div>
+  
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
+        
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="error-banner">
+          {{ errorMessage }}
+        </div>
+  
+        <!-- Success Message -->
+        <div *ngIf="successMessage" class="success-banner">
+          {{ successMessage }}
+        </div>
+  
+        <!-- First Name & Last Name Row -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input 
+              type="text" 
+              id="firstName" 
+              formControlName="firstName"
+              placeholder="John"
+            >
+          </div>
+  
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input 
+              type="text" 
+              id="lastName" 
+              formControlName="lastName"
+              placeholder="Doe"
+            >
+          </div>
+        </div>
+  
+        <!-- Company Code -->
+        <div class="form-group">
+          <label for="companyCode">Company Code</label>
+          <input 
+            type="text" 
+            id="companyCode" 
+            formControlName="companyCode"
+            placeholder="e.g. AC-2024"
+          >
+        </div>
+  
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input 
+            type="email" 
+            id="email" 
+            formControlName="email"
+            placeholder="name@company.com"
+          >
+        </div>
+  
+        <!-- Password -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            formControlName="password"
+            placeholder="Min 6 characters"
+          >
+        </div>
+  
+        <!-- Confirm Password -->
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input 
+            type="password" 
+            id="confirmPassword" 
+            formControlName="confirmPassword"
+            placeholder="Re-enter password"
+          >
+        </div>
+  
+        <!-- Submit Button -->
+        <button type="submit" class="register-btn" [disabled]="isLoading">
+          {{ isLoading ? 'Creating Account...' : 'Sign Up' }}
+        </button>
+  
+        <!-- Login Link -->
+        <div class="login-link">
+          Already have an account? <a routerLink="/login">Log In</a>
+        </div>
+  
+      </form>
