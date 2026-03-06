@@ -1,22 +1,55 @@
 // src/app/app.routes.ts
-
 import { Routes } from '@angular/router';
-import { LoginPageComponent } from './login-page/login-page.component';
-import { RegisterPageComponent } from './register-page/register-page.component';
-import { DashboardComponent } from './dashboard/dashboard.component';
-import { DepartmentComponent } from './department/department.component';
 
 export const routes: Routes = [
-  { path: '',           redirectTo: '/login', pathMatch: 'full' },
-  { path: 'login',      component: LoginPageComponent },
-  { path: 'register',   component: RegisterPageComponent },
-  { path: 'dashboard',  component: DashboardComponent },
-  { path: 'department/:deptId', component: DepartmentComponent },
+  // ── Auth ────────────────────────────────────────────────
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./login-page/login-page.component').then(m => m.LoginPageComponent)
+  },
+  {
+    path: 'register',
+    loadComponent: () =>
+      import('./register-page/register-page.component').then(m => m.RegisterPageComponent)
+  },
 
-  // Add these as you build them out:
-  // { path: 'payroll',  component: PayrollComponent },
-  // { path: 'payslip',  component: PayslipComponent },
-  // { path: 'salary',   component: SalaryComponent },
+  // ── Dashboard ────────────────────────────────────────────
+  {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./dashboard/dashboard.component').then(m => m.DashboardComponent)
+  },
 
-  { path: '**', redirectTo: '/login' }
+  // ── Department (receives :deptId = Department_id) ────────
+  {
+    path: 'department/:deptId',
+    loadComponent: () =>
+      import('./department/department.component').then(m => m.DepartmentComponent)
+  },
+
+  // ── Payroll (payroll periods) ────────────────────────────
+  {
+    path: 'payroll',
+    loadComponent: () =>
+      import('./payroll/payroll.component').then(m => m.PayrollComponent)
+  },
+
+  // ── Payslip ──────────────────────────────────────────────
+  {
+    path: 'payslip',
+    loadComponent: () =>
+      import('./payslip/payslip.component').then(m => m.PayslipComponent)
+  },
+
+  // ── Salary ───────────────────────────────────────────────
+  {
+    path: 'salary',
+    loadComponent: () =>
+      import('./salary/salary.component').then(m => m.SalaryComponent)
+  },
+
+  // ── Default redirect ─────────────────────────────────────
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: '**', redirectTo: 'login' }
 ];

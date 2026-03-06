@@ -1,103 +1,61 @@
 <!-- src/app/dashboard/dashboard.component.html -->
 
 <div class="dashboard-wrapper" (click)="closeDropdown()">
-
-    <!-- Top Navbar -->
     <nav class="navbar">
-      <div class="navbar-brand">
-        <span class="brand-icon">⬡</span>
-        <span class="brand-name">BytePayroll</span>
-      </div>
-  
+      <div class="navbar-brand"><span class="brand-icon">⬡</span><span class="brand-name">BytePayroll</span></div>
       <div class="navbar-right">
         <div class="user-menu" (click)="toggleDropdown($event)">
           <div class="user-avatar">{{ getInitials() }}</div>
           <span class="user-name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
           <span class="chevron" [class.open]="dropdownOpen">▾</span>
-  
           <div class="dropdown-menu" *ngIf="dropdownOpen" (click)="$event.stopPropagation()">
             <div class="dropdown-header">
               <span class="dh-name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
               <span class="dh-email">{{ currentUser?.email }}</span>
             </div>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" (click)="openPrivacySettings()">
-              <span class="di-icon">🔒</span> Privacy & Security
-            </button>
+            <button class="dropdown-item" (click)="openPrivacySettings()"><span class="di-icon">🔒</span> Privacy & Security</button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item danger" (click)="logout()">
-              <span class="di-icon">↩</span> Logout
-            </button>
+            <button class="dropdown-item danger" (click)="logout()"><span class="di-icon">↩</span> Logout</button>
           </div>
         </div>
       </div>
     </nav>
   
-    <!-- Main Content -->
     <main class="main-content">
-  
-      <!-- Profile Hero -->
       <section class="profile-hero">
         <div class="profile-badge">
           <div class="profile-avatar-lg">{{ getInitials() }}</div>
           <div class="profile-info">
             <h1 class="profile-name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</h1>
             <div class="profile-meta">
-              <span class="meta-tag">
-                <span class="meta-label">Company Code</span>
-                <span class="meta-value">{{ currentUser?.companyCode }}</span>
-              </span>
+              <span class="meta-tag"><span class="meta-label">Company Code</span><span class="meta-value">{{ currentUser?.companyCode }}</span></span>
             </div>
           </div>
         </div>
         <div class="profile-decoration"></div>
       </section>
   
-      <!-- Info Cards -->
       <section class="cards-grid">
-        <div class="info-card">
-          <div class="card-body">
-            <span class="card-label">Employee ID</span>
-            <span class="card-value">{{ currentUser?.id | slice:0:10 | uppercase }}</span>
-          </div>
-        </div>
-        <div class="info-card">
-          <div class="card-body">
-            <span class="card-label">Department ID</span>
-            <span class="card-value">DEPT-{{ currentUser?.companyId | slice:0:6 | uppercase }}</span>
-          </div>
-        </div>
-        <div class="info-card">
-          <div class="card-body">
-            <span class="card-label">Employee Number</span>
-            <span class="card-value">EMP-{{ employeeNumber }}</span>
-          </div>
-        </div>
-        <div class="info-card">
-          <div class="card-body">
-            <span class="card-label">Email</span>
-            <span class="card-value card-value--email">{{ currentUser?.email }}</span>
-          </div>
-        </div>
+        <div class="info-card"><div class="card-body"><span class="card-label">Employee ID</span><span class="card-value">{{ currentUser?.id | slice:0:10 | uppercase }}</span></div></div>
+        <div class="info-card"><div class="card-body"><span class="card-label">Employee Number</span><span class="card-value">EMP-{{ employeeNumber }}</span></div></div>
+        <div class="info-card"><div class="card-body"><span class="card-label">Email</span><span class="card-value card-value--email">{{ currentUser?.email }}</span></div></div>
+        <div class="info-card"><div class="card-body"><span class="card-label">Total Departments</span><span class="card-value">{{ departments.length }}</span></div></div>
       </section>
   
-      <!-- Departments Section -->
       <section class="departments-section">
         <div class="section-header">
           <h3 class="section-title">Departments</h3>
-          <button class="add-btn" (click)="openAddDepartment()">
-            <span class="add-icon">＋</span> Add Department
-          </button>
+          <button class="add-btn" (click)="openAddDepartment()"><span class="add-icon">＋</span> Add Department</button>
         </div>
-  
         <div class="dept-grid">
           <div class="dept-card" *ngFor="let dept of departments" (click)="goToDepartment(dept)">
             <div class="dept-info">
               <span class="dept-name">{{ dept.name }}</span>
-              <span class="dept-id">{{ dept.deptId }}</span>
+              <span class="dept-id">Dept ID: {{ dept.Department_id }}</span>
             </div>
             <div class="dept-right">
-              <span class="dept-count">{{ dept.headcount }} members</span>
+              <span class="dept-count">{{ dept.headcount }} {{ dept.headcount === 1 ? 'employee' : 'employees' }}</span>
               <div class="dept-actions">
                 <span class="dept-arrow">→</span>
                 <button class="dept-delete-btn" (click)="confirmDeleteDept(dept, $event)" title="Delete department">✕</button>
@@ -106,22 +64,15 @@
           </div>
         </div>
       </section>
-  
     </main>
   </div>
   
-  <!-- Confirm Delete Department Modal -->
+  <!-- Confirm Delete Dept Modal -->
   <div class="modal-overlay" *ngIf="deptToDelete" (click)="cancelDeleteDept()">
     <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Delete Department</h3>
-        <button class="modal-close" (click)="cancelDeleteDept()">✕</button>
-      </div>
+      <div class="modal-header"><h3>Delete Department</h3><button class="modal-close" (click)="cancelDeleteDept()">✕</button></div>
       <div class="modal-body">
-        <p class="confirm-text">
-          Are you sure you want to delete <strong>{{ deptToDelete?.name }}</strong>?
-          This will also remove all employees in this department.
-        </p>
+        <p class="confirm-text">Are you sure you want to delete <strong>{{ deptToDelete?.name }}</strong>? This cannot be undone.</p>
         <div class="confirm-actions">
           <button class="cancel-btn" (click)="cancelDeleteDept()">Cancel</button>
           <button class="delete-btn" (click)="deleteDepartment()">Delete</button>
@@ -133,15 +84,9 @@
   <!-- Add Department Modal -->
   <div class="modal-overlay" *ngIf="showAddDeptModal" (click)="closeAddDepartment()">
     <div class="modal-card" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Add Department</h3>
-        <button class="modal-close" (click)="closeAddDepartment()">✕</button>
-      </div>
+      <div class="modal-header"><h3>Add Department</h3><button class="modal-close" (click)="closeAddDepartment()">✕</button></div>
       <div class="modal-body">
-        <div class="form-group">
-          <label>Department Name</label>
-          <input type="text" [(ngModel)]="newDeptName" placeholder="e.g. Marketing" class="modal-input" />
-        </div>
+        <div class="form-group"><label>Department Name</label><input type="text" [(ngModel)]="newDeptName" placeholder="e.g. Marketing" class="modal-input" /></div>
         <div *ngIf="addDeptError" class="form-error">{{ addDeptError }}</div>
         <button class="save-btn" (click)="addDepartment()">Add Department</button>
       </div>
@@ -151,41 +96,11 @@
   <!-- Privacy Modal -->
   <div class="modal-overlay" *ngIf="showPrivacyModal" (click)="closePrivacySettings()">
     <div class="modal-card" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Privacy & Security Settings</h3>
-        <button class="modal-close" (click)="closePrivacySettings()">✕</button>
-      </div>
+      <div class="modal-header"><h3>Privacy & Security</h3><button class="modal-close" (click)="closePrivacySettings()">✕</button></div>
       <div class="modal-body">
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-name">Two-Factor Authentication</span>
-            <span class="setting-desc">Add extra protection to your account</span>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" [(ngModel)]="twoFactorEnabled">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-name">Login Notifications</span>
-            <span class="setting-desc">Get notified of new logins</span>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" [(ngModel)]="loginNotifications">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-name">Data Sharing</span>
-            <span class="setting-desc">Allow anonymous analytics</span>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" [(ngModel)]="dataSharing">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
+        <div class="setting-row"><div class="setting-info"><span class="setting-name">Two-Factor Authentication</span><span class="setting-desc">Add extra protection</span></div><label class="toggle"><input type="checkbox" [(ngModel)]="twoFactorEnabled"><span class="toggle-slider"></span></label></div>
+        <div class="setting-row"><div class="setting-info"><span class="setting-name">Login Notifications</span><span class="setting-desc">Get notified of new logins</span></div><label class="toggle"><input type="checkbox" [(ngModel)]="loginNotifications"><span class="toggle-slider"></span></label></div>
+        <div class="setting-row"><div class="setting-info"><span class="setting-name">Data Sharing</span><span class="setting-desc">Allow anonymous analytics</span></div><label class="toggle"><input type="checkbox" [(ngModel)]="dataSharing"><span class="toggle-slider"></span></label></div>
         <button class="save-btn" (click)="savePrivacySettings()">Save Changes</button>
       </div>
     </div>

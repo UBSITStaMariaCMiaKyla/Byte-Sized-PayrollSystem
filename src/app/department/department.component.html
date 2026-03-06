@@ -1,52 +1,36 @@
 <!-- src/app/department/department.component.html -->
 
 <div class="dept-wrapper" (click)="closeDropdown()">
-
-    <!-- Navbar: brand + user dropdown only -->
     <nav class="navbar">
       <div class="navbar-left">
         <button class="back-btn" (click)="goBack()">← Back</button>
-        <div class="navbar-brand">
-          <span class="brand-icon">⬡</span>
-          <span class="brand-name">BytePayroll</span>
-        </div>
+        <div class="navbar-brand"><span class="brand-icon">⬡</span><span class="brand-name">BytePayroll</span></div>
       </div>
-  
       <div class="navbar-right">
         <div class="user-menu" (click)="toggleDropdown($event)">
           <div class="user-avatar">{{ getInitials() }}</div>
           <span class="user-name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
           <span class="chevron" [class.open]="dropdownOpen">▾</span>
-  
           <div class="dropdown-menu" *ngIf="dropdownOpen" (click)="$event.stopPropagation()">
             <div class="dropdown-header">
               <span class="dh-name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
               <span class="dh-email">{{ currentUser?.email }}</span>
             </div>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" (click)="openPrivacySettings()">
-              <span class="di-icon">🔒</span> Privacy & Security
-            </button>
+            <button class="dropdown-item" (click)="openPrivacySettings()"><span class="di-icon">🔒</span> Privacy & Security</button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item danger" (click)="logout()">
-              <span class="di-icon">↩</span> Logout
-            </button>
+            <button class="dropdown-item danger" (click)="logout()"><span class="di-icon">↩</span> Logout</button>
           </div>
         </div>
       </div>
     </nav>
   
-    <!-- Main Content -->
     <main class="main-content">
-  
-      <!-- Department Header -->
       <section class="dept-hero">
         <div class="dept-hero-info">
-          <span class="dept-hero-id">{{ department?.deptId }}</span>
+          <span class="dept-hero-id">Dept ID: {{ department?.Department_id }}</span>
           <h1 class="dept-hero-name">{{ department?.name }}</h1>
-          <span class="dept-hero-count">
-            {{ employees.length }} {{ employees.length === 1 ? 'employee' : 'employees' }}
-          </span>
+          <span class="dept-hero-count">{{ employees.length }} {{ employees.length === 1 ? 'employee' : 'employees' }}</span>
         </div>
         <div class="dept-hero-actions">
           <button class="action-btn" routerLink="/payroll">Payroll</button>
@@ -55,76 +39,57 @@
         </div>
       </section>
   
-      <!-- Employees Section -->
       <section class="employees-section">
         <div class="section-header">
           <h3 class="section-title">Employees</h3>
           <button class="add-btn" (click)="openAddEmployee()">＋ Add Employee</button>
         </div>
   
-        <!-- Empty State -->
         <div class="empty-state" *ngIf="employees.length === 0">
           <div class="empty-icon-wrap">👤</div>
           <p class="empty-title">No employees listed</p>
-          <p class="empty-sub">This department doesn't have any employees yet.</p>
+          <p class="empty-sub">This department has no employees yet.</p>
           <button class="add-btn" (click)="openAddEmployee()">＋ Add First Employee</button>
         </div>
   
-        <!-- Employee Table -->
         <div class="table-wrap" *ngIf="employees.length > 0">
           <table class="emp-table">
             <thead>
               <tr>
-                <th>Employee No.</th>
+                <th>Emp No.</th>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Position</th>
-                <th>Status</th>
+                <th>Gender</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let emp of employees" class="emp-row">
-                <td class="emp-num">{{ emp.employeeNumber }}</td>
+                <td class="emp-num">{{ emp.emp_no }}</td>
                 <td class="emp-name">
                   <div class="emp-avatar-sm">{{ getEmpInitials(emp) }}</div>
-                  {{ emp.firstName }} {{ emp.lastName }}
+                  {{ emp.last_name }}, {{ emp.first_name }}
+                  <span class="emp-middle" *ngIf="emp.middle_name"> {{ emp.middle_name[0] }}.</span>
                 </td>
                 <td class="emp-email">{{ emp.email }}</td>
-                <td class="emp-position">{{ emp.position }}</td>
-                <td>
-                  <span class="status-badge"
-                    [class.active]="emp.status === 'Active'"
-                    [class.on-leave]="emp.status === 'On Leave'"
-                    [class.inactive]="emp.status === 'Inactive'">
-                    {{ emp.status }}
-                  </span>
-                </td>
+                <td class="emp-gender">{{ emp.gender }}</td>
                 <td class="emp-actions">
-                  <button class="remove-btn" (click)="confirmRemove(emp)" title="Remove employee">
-                    Remove
-                  </button>
+                  <button class="remove-btn" (click)="confirmRemove(emp)">Remove</button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
-  
     </main>
   </div>
   
   <!-- Confirm Remove Modal -->
   <div class="modal-overlay" *ngIf="empToRemove" (click)="cancelRemove()">
     <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Remove Employee</h3>
-        <button class="modal-close" (click)="cancelRemove()">✕</button>
-      </div>
+      <div class="modal-header"><h3>Remove Employee</h3><button class="modal-close" (click)="cancelRemove()">✕</button></div>
       <div class="modal-body">
-        <p class="confirm-text">
-          Are you sure you want to remove <strong>{{ empToRemove?.firstName }} {{ empToRemove?.lastName }}</strong> from this department?
-        </p>
+        <p class="confirm-text">Remove <strong>{{ empToRemove?.first_name }} {{ empToRemove?.last_name }}</strong> from this department?</p>
         <div class="confirm-actions">
           <button class="cancel-btn" (click)="cancelRemove()">Cancel</button>
           <button class="delete-btn" (click)="removeEmployee()">Remove</button>
@@ -136,35 +101,18 @@
   <!-- Add Employee Modal -->
   <div class="modal-overlay" *ngIf="showAddEmpModal" (click)="closeAddEmployee()">
     <div class="modal-card" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Add Employee</h3>
-        <button class="modal-close" (click)="closeAddEmployee()">✕</button>
-      </div>
+      <div class="modal-header"><h3>Add Employee</h3><button class="modal-close" (click)="closeAddEmployee()">✕</button></div>
       <div class="modal-body">
         <div class="form-row">
-          <div class="form-group">
-            <label>First Name</label>
-            <input type="text" [(ngModel)]="newEmp.firstName" placeholder="John" class="modal-input" />
-          </div>
-          <div class="form-group">
-            <label>Last Name</label>
-            <input type="text" [(ngModel)]="newEmp.lastName" placeholder="Doe" class="modal-input" />
-          </div>
+          <div class="form-group"><label>First Name *</label><input type="text" [(ngModel)]="newEmp.first_name" placeholder="Juan" class="modal-input" /></div>
+          <div class="form-group"><label>Last Name *</label><input type="text" [(ngModel)]="newEmp.last_name" placeholder="Dela Cruz" class="modal-input" /></div>
         </div>
+        <div class="form-group"><label>Email *</label><input type="email" [(ngModel)]="newEmp.email" placeholder="juan@company.com" class="modal-input" /></div>
         <div class="form-group">
-          <label>Email</label>
-          <input type="email" [(ngModel)]="newEmp.email" placeholder="john@company.com" class="modal-input" />
-        </div>
-        <div class="form-group">
-          <label>Position</label>
-          <input type="text" [(ngModel)]="newEmp.position" placeholder="e.g. Senior Accountant" class="modal-input" />
-        </div>
-        <div class="form-group">
-          <label>Status</label>
-          <select [(ngModel)]="newEmp.status" class="modal-input">
-            <option>Active</option>
-            <option>Inactive</option>
-            <option>On Leave</option>
+          <label>Gender</label>
+          <select [(ngModel)]="newEmp.gender" class="modal-input">
+            <option>Male</option>
+            <option>Female</option>
           </select>
         </div>
         <div *ngIf="addEmpError" class="form-error">{{ addEmpError }}</div>
@@ -176,32 +124,11 @@
   <!-- Privacy Modal -->
   <div class="modal-overlay" *ngIf="showPrivacyModal" (click)="closePrivacySettings()">
     <div class="modal-card" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Privacy & Security Settings</h3>
-        <button class="modal-close" (click)="closePrivacySettings()">✕</button>
-      </div>
+      <div class="modal-header"><h3>Privacy & Security</h3><button class="modal-close" (click)="closePrivacySettings()">✕</button></div>
       <div class="modal-body">
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-name">Two-Factor Authentication</span>
-            <span class="setting-desc">Add extra protection to your account</span>
-          </div>
-          <label class="toggle"><input type="checkbox" [(ngModel)]="twoFactorEnabled"><span class="toggle-slider"></span></label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-name">Login Notifications</span>
-            <span class="setting-desc">Get notified of new logins</span>
-          </div>
-          <label class="toggle"><input type="checkbox" [(ngModel)]="loginNotifications"><span class="toggle-slider"></span></label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info">
-            <span class="setting-name">Data Sharing</span>
-            <span class="setting-desc">Allow anonymous analytics</span>
-          </div>
-          <label class="toggle"><input type="checkbox" [(ngModel)]="dataSharing"><span class="toggle-slider"></span></label>
-        </div>
+        <div class="setting-row"><div class="setting-info"><span class="setting-name">Two-Factor Authentication</span><span class="setting-desc">Extra account protection</span></div><label class="toggle"><input type="checkbox" [(ngModel)]="twoFactorEnabled"><span class="toggle-slider"></span></label></div>
+        <div class="setting-row"><div class="setting-info"><span class="setting-name">Login Notifications</span><span class="setting-desc">Get notified of new logins</span></div><label class="toggle"><input type="checkbox" [(ngModel)]="loginNotifications"><span class="toggle-slider"></span></label></div>
+        <div class="setting-row"><div class="setting-info"><span class="setting-name">Data Sharing</span><span class="setting-desc">Allow anonymous analytics</span></div><label class="toggle"><input type="checkbox" [(ngModel)]="dataSharing"><span class="toggle-slider"></span></label></div>
         <button class="save-btn" (click)="savePrivacySettings()">Save Changes</button>
       </div>
     </div>

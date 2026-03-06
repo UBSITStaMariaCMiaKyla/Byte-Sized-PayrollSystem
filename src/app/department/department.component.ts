@@ -1,25 +1,15 @@
 // src/app/department/department.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../login-page/auth.service';
-import { Department } from '../dashboard/dashboard.component';
-
-export interface Employee {
-  employeeNumber: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  position: string;
-  status: 'Active' | 'Inactive' | 'On Leave';
-  deptId: string;
-}
+import { DatabaseService, Department, Employee } from '../database.service';
 
 @Component({
   selector: 'app-department',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './department.component.html',
   styleUrl: './department.component.css'
 })
@@ -34,26 +24,23 @@ export class DepartmentComponent implements OnInit {
   loginNotifications = true;
   dataSharing = false;
 
+  // Add employee modal — only fields that exist in the DB
   showAddEmpModal = false;
   addEmpError = '';
   newEmp = this.blankEmp();
 
+  // Remove confirm
   empToRemove: Employee | null = null;
-
-  private readonly EMP_STORAGE_KEY = 'payroll_employees';
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private db: DatabaseService
   ) {}
 
   ngOnInit(): void {
-    if (!this.authService.isLoggedIn()) {
-      this.router.navigate(['/login']);
-      return;
-    }
-
+    if (!this.authService.isLoggedIn()) { this.router.navigate(['/login']); return; }
     this.currentUser = this.authService.getCurrentUser();
 
     const nav = this.router.getCurrentNavigation();
@@ -62,179 +49,78 @@ export class DepartmentComponent implements OnInit {
     if (state?.department) {
       this.department = state.department;
     } else {
-      const deptId = this.route.snapshot.paramMap.get('deptId');
-      const saved = localStorage.getItem('payroll_departments');
-      if (saved && deptId) {
-        const depts: Department[] = JSON.parse(saved);
-        this.department = depts.find(d => d.deptId === deptId) ?? null;
-      }
+      const id = Number(this.route.snapshot.paramMap.get('deptId'));
+      this.department = this.db.getDepartmentById(id) ?? null;
     }
 
-    if (!this.department) {
-      this.router.navigate(['/dashboard']);
-      return;
-    }
-
+    if (!this.department) { this.router.navigate(['/dashboard']); return; }
     this.loadEmployees();
   }
 
-  // ── Helpers ───────────────────────────────────────────────
+  private loadEmployees(): void {
+    this.employees = this.db.getEmployeesByDept(this.department!.Department_id);
+  }
+
   getInitials(): string {
     if (!this.currentUser) return '?';
-    return ((this.currentUser.firstName?.charAt(0) ?? '') +
-            (this.currentUser.lastName?.charAt(0) ?? '')).toUpperCase();
+    return ((this.currentUser.firstName?.[0] ?? '') + (this.currentUser.lastName?.[0] ?? '')).toUpperCase();
   }
 
   getEmpInitials(emp: Employee): string {
-    return ((emp.firstName?.charAt(0) ?? '') + (emp.lastName?.charAt(0) ?? '')).toUpperCase();
+    return ((emp.first_name?.[0] ?? '') + (emp.last_name?.[0] ?? '')).toUpperCase();
   }
 
-  goBack(): void {
-    this.router.navigate(['/dashboard']);
-  }
+  goBack(): void { this.router.navigate(['/dashboard']); }
 
-  // ── Dropdown ──────────────────────────────────────────────
-  toggleDropdown(event: MouseEvent): void {
-    event.stopPropagation();
-    this.dropdownOpen = !this.dropdownOpen;
-  }
-
-  closeDropdown(): void {
-    this.dropdownOpen = false;
-  }
-
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
-  }
-
-  openPrivacySettings(): void {
-    this.dropdownOpen = false;
-    this.showPrivacyModal = true;
-  }
-
-  closePrivacySettings(): void {
-    this.showPrivacyModal = false;
-  }
-
+  toggleDropdown(e: MouseEvent): void { e.stopPropagation(); this.dropdownOpen = !this.dropdownOpen; }
+  closeDropdown(): void { this.dropdownOpen = false; }
+  logout(): void { this.authService.logout(); this.router.navigate(['/login']); }
+  openPrivacySettings(): void { this.dropdownOpen = false; this.showPrivacyModal = true; }
+  closePrivacySettings(): void { this.showPrivacyModal = false; }
   savePrivacySettings(): void {
-    localStorage.setItem('payroll_privacy_prefs', JSON.stringify({
-      twoFactorEnabled: this.twoFactorEnabled,
-      loginNotifications: this.loginNotifications,
-      dataSharing: this.dataSharing
-    }));
+    localStorage.setItem('payroll_privacy_prefs', JSON.stringify({ twoFactorEnabled: this.twoFactorEnabled, loginNotifications: this.loginNotifications, dataSharing: this.dataSharing }));
     alert('Privacy settings saved!');
     this.closePrivacySettings();
   }
 
-  // ── Employees ─────────────────────────────────────────────
-  private loadEmployees(): void {
-    const saved = localStorage.getItem(this.EMP_STORAGE_KEY);
-    const all: Employee[] = saved ? JSON.parse(saved) : [];
-    this.employees = all.filter(e => e.deptId === this.department!.deptId);
-    this.syncHeadcount();
-  }
-
-  /** Persist the full employees list (all depts) back to storage */
-  private persistAllEmployees(all: Employee[]): void {
-    localStorage.setItem(this.EMP_STORAGE_KEY, JSON.stringify(all));
-  }
-
-  /** Keep the department's headcount in sync with the live employees array */
-  private syncHeadcount(): void {
-    const saved = localStorage.getItem('payroll_departments');
-    if (!saved || !this.department) return;
-    const depts: Department[] = JSON.parse(saved);
-    const idx = depts.findIndex(d => d.deptId === this.department!.deptId);
-    if (idx > -1) {
-      depts[idx].headcount = this.employees.length;
-      localStorage.setItem('payroll_departments', JSON.stringify(depts));
-      this.department.headcount = this.employees.length;
-    }
-  }
-
-  private generateEmpNumber(): string {
-    const saved = localStorage.getItem(this.EMP_STORAGE_KEY);
-    const all: Employee[] = saved ? JSON.parse(saved) : [];
-    return 'EMP-' + String(all.length + 1).padStart(5, '0');
-  }
-
+  // ── Add Employee ──────────────────────────────────────────
   private blankEmp() {
-    return { firstName: '', lastName: '', email: '', position: '', status: 'Active' as const };
+    return {
+      first_name: '', last_name: '', middle_name: '',
+      email: '', gender: 'Prefer not to say' as Employee['gender']
+    };
   }
 
-  // Add
-  openAddEmployee(): void {
-    this.newEmp = this.blankEmp();
-    this.addEmpError = '';
-    this.showAddEmpModal = true;
-  }
-
-  closeAddEmployee(): void {
-    this.showAddEmpModal = false;
-  }
+  openAddEmployee(): void { this.newEmp = this.blankEmp(); this.addEmpError = ''; this.showAddEmpModal = true; }
+  closeAddEmployee(): void { this.showAddEmpModal = false; }
 
   addEmployee(): void {
-    const { firstName, lastName, email, position } = this.newEmp;
-    if (!firstName.trim() || !lastName.trim()) {
-      this.addEmpError = 'First and last name are required.'; return;
-    }
-    if (!email.trim()) {
-      this.addEmpError = 'Email is required.'; return;
-    }
-    if (!position.trim()) {
-      this.addEmpError = 'Position is required.'; return;
-    }
+    const { first_name, last_name, email, gender } = this.newEmp;
+    if (!first_name.trim() || !last_name.trim()) { this.addEmpError = 'First and last name are required.'; return; }
+    if (!email.trim()) { this.addEmpError = 'Email is required.'; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { this.addEmpError = 'Enter a valid email address.'; return; }
 
-    const emp: Employee = {
-      ...this.newEmp,
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
+    const created = this.db.addEmployee({
+      Department_id: this.department!.Department_id,
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      middle_name: this.newEmp.middle_name?.trim() || null,
       email: email.trim(),
-      position: position.trim(),
-      employeeNumber: this.generateEmpNumber(),
-      deptId: this.department!.deptId
-    };
+      gender
+    });
 
-    // Add to local view
-    this.employees = [...this.employees, emp];
-
-    // Persist to full list
-    const saved = localStorage.getItem(this.EMP_STORAGE_KEY);
-    const all: Employee[] = saved ? JSON.parse(saved) : [];
-    all.push(emp);
-    this.persistAllEmployees(all);
-
-    this.syncHeadcount();
+    if (!created) { this.addEmpError = 'An employee with this email already exists.'; return; }
+    this.loadEmployees();
     this.closeAddEmployee();
   }
 
-  // Remove
-  confirmRemove(emp: Employee): void {
-    this.empToRemove = emp;
-  }
-
-  cancelRemove(): void {
-    this.empToRemove = null;
-  }
-
+  // ── Remove Employee ───────────────────────────────────────
+  confirmRemove(emp: Employee): void { this.empToRemove = emp; }
+  cancelRemove(): void { this.empToRemove = null; }
   removeEmployee(): void {
     if (!this.empToRemove) return;
-
-    const target = this.empToRemove;
-
-    // Remove from local view
-    this.employees = this.employees.filter(
-      e => e.employeeNumber !== target.employeeNumber
-    );
-
-    // Remove from full persisted list
-    const saved = localStorage.getItem(this.EMP_STORAGE_KEY);
-    const all: Employee[] = saved ? JSON.parse(saved) : [];
-    const updated = all.filter(e => e.employeeNumber !== target.employeeNumber);
-    this.persistAllEmployees(updated);
-
-    this.syncHeadcount();
+    this.db.removeEmployee(this.empToRemove.Employee_id);
+    this.loadEmployees();
     this.empToRemove = null;
   }
 }

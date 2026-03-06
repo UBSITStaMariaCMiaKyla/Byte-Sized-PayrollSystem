@@ -1,0 +1,135 @@
+<!-- src/app/payslip/payslip.component.html -->
+
+<div class="page-wrapper" (click)="closeDropdown()">
+    <nav class="navbar">
+      <div class="navbar-left">
+        <button class="back-btn" routerLink="/dashboard">← Dashboard</button>
+        <div class="navbar-brand"><span class="brand-icon">⬡</span><span class="brand-name">BytePayroll</span></div>
+      </div>
+      <div class="navbar-right">
+        <div class="user-menu" (click)="toggleDropdown($event)">
+          <div class="user-avatar">{{ getInitials() }}</div>
+          <span class="user-name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+          <span class="chevron" [class.open]="dropdownOpen">▾</span>
+          <div class="dropdown-menu" *ngIf="dropdownOpen" (click)="$event.stopPropagation()">
+            <div class="dropdown-header"><span class="dh-name">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span><span class="dh-email">{{ currentUser?.email }}</span></div>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" (click)="openPrivacy()"><span>🔒</span> Privacy & Security</button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" (click)="logout()"><span>↩</span> Logout</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  
+    <main class="main-content">
+      <div class="page-header-row">
+        <div>
+          <h1 class="page-title">Payslips</h1>
+          <p class="page-sub">Employee payslip records per pay period</p>
+        </div>
+        <button class="add-btn" (click)="openAdd()">＋ Generate Payslip</button>
+      </div>
+  
+      <div class="empty-state" *ngIf="rows.length === 0">
+        <div class="empty-icon">🧾</div>
+        <p class="empty-title">No payslips yet</p>
+        <p class="empty-sub">Create a payroll period first, then generate payslips.</p>
+        <button class="add-btn" (click)="openAdd()">＋ Generate Payslip</button>
+      </div>
+  
+      <div class="table-wrap" *ngIf="rows.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Payslip ID</th>
+              <th>Emp No.</th>
+              <th>Employee</th>
+              <th>Period</th>
+              <th>Payroll Date</th>
+              <th>Gross Pay</th>
+              <th>Deductions</th>
+              <th class="net-col">Net Pay</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of rows">
+              <td class="id-cell">{{ row.Payslip_id }}</td>
+              <td class="mono">{{ row.emp_no }}</td>
+              <td class="name-cell">{{ row.full_name }}</td>
+              <td class="date-cell">{{ row.period_start }} → {{ row.period_end }}</td>
+              <td class="date-cell">{{ row.payroll_date }}</td>
+              <td class="amount-cell">₱ {{ row.gross_pay | number:'1.2-2' }}</td>
+              <td class="amount-cell deduct">₱ {{ row.total_deductions | number:'1.2-2' }}</td>
+              <td class="amount-cell net">₱ {{ row.net_pay | number:'1.2-2' }}</td>
+              <td class="action-col">
+                <button class="remove-btn" (click)="confirmDelete(row)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Confirm Delete -->
+  <div class="modal-overlay" *ngIf="slipToDelete" (click)="cancelDelete()">
+    <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h3>Delete Payslip</h3><button class="modal-close" (click)="cancelDelete()">✕</button></div>
+      <div class="modal-body">
+        <p class="confirm-text">Delete payslip <strong>#{{ slipToDelete?.Payslip_id }}</strong>? This cannot be undone.</p>
+        <div class="confirm-actions">
+          <button class="cancel-btn" (click)="cancelDelete()">Cancel</button>
+          <button class="delete-btn" (click)="deleteSlip()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Generate Payslip Modal -->
+  <div class="modal-overlay" *ngIf="showAddModal" (click)="closeAdd()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h3>Generate Payslip</h3><button class="modal-close" (click)="closeAdd()">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Payroll Period *</label>
+          <select [(ngModel)]="newRecord.Payroll_id" class="modal-input">
+            <option [value]="0" disabled>Select period…</option>
+            <option *ngFor="let p of payrolls" [value]="p.Payroll_id">#{{ p.Payroll_id }} — {{ p.period_start }} to {{ p.period_end }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Employee *</label>
+          <select [(ngModel)]="newRecord.Employee_id" class="modal-input">
+            <option [value]="0" disabled>Select employee…</option>
+            <option *ngFor="let emp of employees" [value]="emp.Employee_id">{{ emp.emp_no }} — {{ emp.last_name }}, {{ emp.first_name }}</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Gross Pay (₱) *</label><input type="number" [(ngModel)]="newRecord.gross_pay" min="0" step="0.01" placeholder="0.00" class="modal-input" /></div>
+          <div class="form-group"><label>Total Deductions (₱)</label><input type="number" [(ngModel)]="newRecord.total_deductions" min="0" step="0.01" placeholder="0.00" class="modal-input" /></div>
+        </div>
+        <!-- Net pay preview (mirrors DB computed column) -->
+        <div class="net-preview">
+          <span class="net-label">Net Pay (computed)</span>
+          <span class="net-value">₱ {{ previewNetPay | number:'1.2-2' }}</span>
+        </div>
+        <div *ngIf="addError" class="form-error">{{ addError }}</div>
+        <button class="save-btn" (click)="save()">Generate Payslip</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Privacy Modal -->
+  <div class="modal-overlay" *ngIf="showPrivacyModal" (click)="closePrivacy()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h3>Privacy & Security</h3><button class="modal-close" (click)="closePrivacy()">✕</button></div>
+      <div class="modal-body">
+        <div class="setting-row"><div class="setting-info"><span class="setting-name">Two-Factor Authentication</span><span class="setting-desc">Extra account protection</span></div><label class="toggle"><input type="checkbox" [(ngModel)]="twoFactorEnabled"><span class="toggle-slider"></span></label></div>
+        <div class="setting-row"><div class="setting-info"><span class="setting-name">Login Notifications</span><span class="setting-desc">Get notified of new logins</span></div><label class="toggle"><input type="checkbox" [(ngModel)]="loginNotifications"><span class="toggle-slider"></span></label></div>
+        <button class="save-btn" (click)="savePrivacy()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+  
