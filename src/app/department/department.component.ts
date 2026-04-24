@@ -4,7 +4,15 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../login-page/auth.service';
-import { DatabaseService, Department, Employee } from '../database.service';
+import { ApiService } from '../api.service';
+
+export interface Department { Department_id: number; name: string; active: number; }
+export interface Employee {
+  Employee_id: number; Department_id: number; emp_no: string | null;
+  first_name: string; last_name: string; middle_name: string | null;
+  gender: 'Male' | 'Female' | 'Prefer not to say' | null;
+  email: string | null; active: number;
+}
 
 @Component({
   selector: 'app-department',
@@ -24,19 +32,17 @@ export class DepartmentComponent implements OnInit {
   loginNotifications = true;
   dataSharing = false;
 
-  // Add employee modal — only fields that exist in the DB
   showAddEmpModal = false;
   addEmpError = '';
   newEmp = this.blankEmp();
 
-  // Remove confirm
   empToRemove: Employee | null = null;
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private db: DatabaseService
+    private api: ApiService
   ) {}
 
   ngOnInit(): void {
@@ -48,17 +54,22 @@ export class DepartmentComponent implements OnInit {
 
     if (state?.department) {
       this.department = state.department;
+      this.loadEmployees();
     } else {
       const id = Number(this.route.snapshot.paramMap.get('deptId'));
-      this.department = this.db.getDepartmentById(id) ?? null;
+      this.api.getDepartment(id).subscribe({
+        next: (dept) => { this.department = dept; this.loadEmployees(); },
+        error: () => { this.router.navigate(['/dashboard']); }
+      });
     }
-
-    if (!this.department) { this.router.navigate(['/dashboard']); return; }
-    this.loadEmployees();
   }
 
   private loadEmployees(): void {
-    this.employees = this.db.getEmployeesByDept(this.department!.Department_id);
+    if (!this.department) return;
+    this.api.getEmployeesByDept(this.department.Department_id).subscribe({
+      next: (emps) => { this.employees = emps; },
+      error: (err) => { console.error('Failed to load employees', err); }
+    });
   }
 
   getInitials(): string {
@@ -78,12 +89,15 @@ export class DepartmentComponent implements OnInit {
   openPrivacySettings(): void { this.dropdownOpen = false; this.showPrivacyModal = true; }
   closePrivacySettings(): void { this.showPrivacyModal = false; }
   savePrivacySettings(): void {
-    localStorage.setItem('payroll_privacy_prefs', JSON.stringify({ twoFactorEnabled: this.twoFactorEnabled, loginNotifications: this.loginNotifications, dataSharing: this.dataSharing }));
+    localStorage.setItem('payroll_privacy_prefs', JSON.stringify({
+      twoFactorEnabled: this.twoFactorEnabled,
+      loginNotifications: this.loginNotifications,
+      dataSharing: this.dataSharing
+    }));
     alert('Privacy settings saved!');
     this.closePrivacySettings();
   }
 
-  // ── Add Employee ──────────────────────────────────────────
   private blankEmp() {
     return {
       first_name: '', last_name: '', middle_name: '',
@@ -100,27 +114,31 @@ export class DepartmentComponent implements OnInit {
     if (!email.trim()) { this.addEmpError = 'Email is required.'; return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { this.addEmpError = 'Enter a valid email address.'; return; }
 
-    const created = this.db.addEmployee({
+    this.api.addEmployee({
       Department_id: this.department!.Department_id,
       first_name: first_name.trim(),
       last_name: last_name.trim(),
-      middle_name: this.newEmp.middle_name?.trim() || null,
+      middle_name: this.newEmp.middle_name?.trim() || undefined,
       email: email.trim(),
-      gender
+      gender: gender ?? undefined
+    }).subscribe({
+      next: (res) => {
+        if (!res.success) { this.addEmpError = res.message; return; }
+        this.loadEmployees();
+        this.closeAddEmployee();
+      },
+      error: () => { this.addEmpError = 'Failed to add employee. Please try again.'; }
     });
-
-    if (!created) { this.addEmpError = 'An employee with this email already exists.'; return; }
-    this.loadEmployees();
-    this.closeAddEmployee();
   }
 
-  // ── Remove Employee ───────────────────────────────────────
   confirmRemove(emp: Employee): void { this.empToRemove = emp; }
   cancelRemove(): void { this.empToRemove = null; }
+
   removeEmployee(): void {
     if (!this.empToRemove) return;
-    this.db.removeEmployee(this.empToRemove.Employee_id);
-    this.loadEmployees();
-    this.empToRemove = null;
+    this.api.deleteEmployee(this.empToRemove.Employee_id).subscribe({
+      next: () => { this.loadEmployees(); this.empToRemove = null; },
+      error: () => { alert('Failed to remove employee.'); this.empToRemove = null; }
+    });
   }
 }

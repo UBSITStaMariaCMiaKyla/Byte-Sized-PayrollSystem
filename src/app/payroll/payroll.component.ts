@@ -4,7 +4,14 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../login-page/auth.service';
-import { DatabaseService, Payroll } from '../database.service';
+import { ApiService } from '../api.service';
+
+export interface Payroll {
+  Payroll_id: number;
+  period_start: string;
+  period_end: string;
+  payroll_date: string;
+}
 
 @Component({
   selector: 'app-payroll',
@@ -33,7 +40,7 @@ export class PayrollComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private db: DatabaseService
+    private api: ApiService
   ) {}
 
   ngOnInit(): void {
@@ -43,10 +50,17 @@ export class PayrollComponent implements OnInit {
   }
 
   private load(): void {
-    this.payrolls = this.db.getPayrolls();
-    this.payslipCounts = {};
-    this.payrolls.forEach(p => {
-      this.payslipCounts[p.Payroll_id] = this.db.getPayslipsByPayroll(p.Payroll_id).length;
+    this.api.getPayrolls().subscribe({
+      next: (payrolls) => {
+        this.payrolls = payrolls;
+        this.payslipCounts = {};
+        payrolls.forEach(p => {
+          this.api.getPayslipsByPayroll(p.Payroll_id).subscribe({
+            next: (slips) => { this.payslipCounts[p.Payroll_id] = slips.length; }
+          });
+        });
+      },
+      error: (err) => { console.error('Failed to load payrolls', err); }
     });
   }
 
@@ -63,19 +77,25 @@ export class PayrollComponent implements OnInit {
     if (!period_start || !period_end || !payroll_date) { this.addError = 'All fields are required.'; return; }
     if (period_end < period_start) { this.addError = 'Period end must be on or after period start.'; return; }
 
-    const result = this.db.addPayroll({ period_start, period_end, payroll_date });
-    if (!result) { this.addError = 'Invalid period dates.'; return; }
-    this.load();
-    this.closeAdd();
+    this.api.addPayroll({ period_start, period_end, payroll_date }).subscribe({
+      next: (res) => {
+        if (!res.success) { this.addError = res.message; return; }
+        this.load();
+        this.closeAdd();
+      },
+      error: () => { this.addError = 'Failed to create payroll. Please try again.'; }
+    });
   }
 
   confirmDelete(p: Payroll): void { this.payrollToDelete = p; }
   cancelDelete(): void { this.payrollToDelete = null; }
+
   deletePayroll(): void {
     if (!this.payrollToDelete) return;
-    this.db.deletePayroll(this.payrollToDelete.Payroll_id);
-    this.load();
-    this.payrollToDelete = null;
+    this.api.deletePayroll(this.payrollToDelete.Payroll_id).subscribe({
+      next: () => { this.load(); this.payrollToDelete = null; },
+      error: () => { alert('Failed to delete payroll.'); this.payrollToDelete = null; }
+    });
   }
 
   getInitials(): string {
@@ -87,5 +107,13 @@ export class PayrollComponent implements OnInit {
   logout(): void { this.authService.logout(); this.router.navigate(['/login']); }
   openPrivacy(): void { this.dropdownOpen = false; this.showPrivacyModal = true; }
   closePrivacy(): void { this.showPrivacyModal = false; }
-  savePrivacy(): void { localStorage.setItem('payroll_privacy_prefs', JSON.stringify({ twoFactorEnabled: this.twoFactorEnabled, loginNotifications: this.loginNotifications, dataSharing: this.dataSharing })); alert('Saved!'); this.closePrivacy(); }
+  savePrivacy(): void {
+    localStorage.setItem('payroll_privacy_prefs', JSON.stringify({
+      twoFactorEnabled: this.twoFactorEnabled,
+      loginNotifications: this.loginNotifications,
+      dataSharing: this.dataSharing
+    }));
+    alert('Saved!');
+    this.closePrivacy();
+  }
 }

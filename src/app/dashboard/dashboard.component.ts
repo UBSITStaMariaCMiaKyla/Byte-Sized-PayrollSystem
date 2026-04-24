@@ -1,17 +1,21 @@
 // src/app/dashboard/dashboard.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../login-page/auth.service';
-import { DatabaseService, Department } from '../database.service';
+import { ApiService } from '../api.service';
 
-export type { Department };
+export interface Department {
+  Department_id: number;
+  name: string;
+  active: number;
+}
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -25,6 +29,7 @@ export class DashboardComponent implements OnInit {
   dataSharing = false;
 
   departments: (Department & { headcount: number })[] = [];
+  totalDepartments = 0;
   showAddDeptModal = false;
   newDeptName = '';
   addDeptError = '';
@@ -33,21 +38,35 @@ export class DashboardComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private db: DatabaseService
+    private api: ApiService
   ) {}
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn()) { this.router.navigate(['/login']); return; }
     this.currentUser = this.authService.getCurrentUser();
-    if (this.currentUser?.id) this.employeeNumber = this.generateEmpNumber(this.currentUser.id);
+    if (this.currentUser?.id) {
+      this.employeeNumber = this.generateEmpNumber(this.currentUser.id);
+    }
     this.loadDepartments();
   }
 
   private loadDepartments(): void {
-    this.departments = this.db.getDepartments(true).map(d => ({
-      ...d,
-      headcount: this.db.getEmployeeCountForDepartment(d.Department_id)
-    }));
+    this.api.getDepartments(true).subscribe({
+      next: (depts) => {
+        this.totalDepartments = depts.length;
+        this.departments = depts.map(d => ({ ...d, headcount: 0 }));
+        this.departments.forEach((d, i) => {
+          this.api.getDeptHeadcount(d.Department_id).subscribe({
+            next: ({ headcount }) => {
+              this.departments[i] = { ...this.departments[i], headcount };
+            }
+          });
+        });
+      },
+      error: (err) => {
+        console.error('Failed to load departments', err);
+      }
+    });
   }
 
   getInitials(): string {
@@ -55,8 +74,8 @@ export class DashboardComponent implements OnInit {
     return ((this.currentUser.firstName?.[0] ?? '') + (this.currentUser.lastName?.[0] ?? '')).toUpperCase();
   }
 
-  private generateEmpNumber(id: string): string {
-    return id.replace(/[^0-9a-z]/gi, '').slice(-5).toUpperCase().padStart(5, '0');
+  private generateEmpNumber(id: number): string {
+    return String(id).padStart(5, '0');
   }
 
   toggleDropdown(e: MouseEvent): void { e.stopPropagation(); this.dropdownOpen = !this.dropdownOpen; }
@@ -67,7 +86,11 @@ export class DashboardComponent implements OnInit {
   openPrivacySettings(): void { this.dropdownOpen = false; this.showPrivacyModal = true; }
   closePrivacySettings(): void { this.showPrivacyModal = false; }
   savePrivacySettings(): void {
-    localStorage.setItem('payroll_privacy_prefs', JSON.stringify({ twoFactorEnabled: this.twoFactorEnabled, loginNotifications: this.loginNotifications, dataSharing: this.dataSharing }));
+    localStorage.setItem('payroll_privacy_prefs', JSON.stringify({
+      twoFactorEnabled: this.twoFactorEnabled,
+      loginNotifications: this.loginNotifications,
+      dataSharing: this.dataSharing
+    }));
     alert('Privacy settings saved!');
     this.closePrivacySettings();
   }
@@ -78,21 +101,29 @@ export class DashboardComponent implements OnInit {
 
   openAddDepartment(): void { this.newDeptName = ''; this.addDeptError = ''; this.showAddDeptModal = true; }
   closeAddDepartment(): void { this.showAddDeptModal = false; }
+
   addDepartment(): void {
     const name = this.newDeptName.trim();
     if (!name) { this.addDeptError = 'Department name is required.'; return; }
-    const created = this.db.addDepartment(name);
-    if (!created) { this.addDeptError = 'A department with this name already exists.'; return; }
-    this.loadDepartments();
-    this.closeAddDepartment();
+
+    this.api.addDepartment(name).subscribe({
+      next: (res) => {
+        if (!res.success) { this.addDeptError = res.message; return; }
+        this.loadDepartments();
+        this.closeAddDepartment();
+      },
+      error: () => { this.addDeptError = 'Failed to add department. Please try again.'; }
+    });
   }
 
   confirmDeleteDept(dept: Department, e: MouseEvent): void { e.stopPropagation(); this.deptToDelete = dept; }
   cancelDeleteDept(): void { this.deptToDelete = null; }
+
   deleteDepartment(): void {
     if (!this.deptToDelete) return;
-    this.db.deactivateDepartment(this.deptToDelete.Department_id);
-    this.loadDepartments();
-    this.deptToDelete = null;
+    this.api.deactivateDepartment(this.deptToDelete.Department_id).subscribe({
+      next: () => { this.loadDepartments(); this.deptToDelete = null; },
+      error: () => { alert('Failed to delete department.'); this.deptToDelete = null; }
+    });
   }
 }

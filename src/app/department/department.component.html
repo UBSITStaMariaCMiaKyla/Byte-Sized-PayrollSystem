@@ -89,7 +89,7 @@
     <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
       <div class="modal-header"><h3>Remove Employee</h3><button class="modal-close" (click)="cancelRemove()">✕</button></div>
       <div class="modal-body">
-        <p class="confirm-text">Remove <strong>{{ empToRemove?.first_name }} {{ empToRemove?.last_name }}</strong> from this department?</p>
+        <p class="confirm-text">Remove <strong>{{ empToRemove.first_name }} {{ empToRemove.last_name }}</strong> from this department?</p>
         <div class="confirm-actions">
           <button class="cancel-btn" (click)="cancelRemove()">Cancel</button>
           <button class="delete-btn" (click)="removeEmployee()">Remove</button>
@@ -133,4 +133,3 @@
       </div>
     </div>
   </div>
-  

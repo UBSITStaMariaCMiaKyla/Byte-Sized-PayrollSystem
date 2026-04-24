@@ -78,7 +78,7 @@
     <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
       <div class="modal-header"><h3>Delete Payslip</h3><button class="modal-close" (click)="cancelDelete()">✕</button></div>
       <div class="modal-body">
-        <p class="confirm-text">Delete payslip <strong>#{{ slipToDelete?.Payslip_id }}</strong>? This cannot be undone.</p>
+        <p class="confirm-text">Delete payslip <strong>#{{ slipToDelete.Payslip_id }}</strong>? This cannot be undone.</p>
         <div class="confirm-actions">
           <button class="cancel-btn" (click)="cancelDelete()">Cancel</button>
           <button class="delete-btn" (click)="deleteSlip()">Delete</button>
@@ -132,4 +132,3 @@
       </div>
     </div>
   </div>
-  

@@ -74,7 +74,7 @@
     <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
       <div class="modal-header"><h3>Delete Payroll Period</h3><button class="modal-close" (click)="cancelDelete()">✕</button></div>
       <div class="modal-body">
-        <p class="confirm-text">Delete payroll period <strong>#{{ payrollToDelete?.Payroll_id }}</strong>? All associated payslips will also be deleted.</p>
+        <p class="confirm-text">Delete payroll period <strong>#{{ payrollToDelete.Payroll_id }}</strong>? All associated payslips will also be deleted.</p>
         <div class="confirm-actions">
           <button class="cancel-btn" (click)="cancelDelete()">Cancel</button>
           <button class="delete-btn" (click)="deletePayroll()">Delete</button>
@@ -110,4 +110,3 @@
       </div>
     </div>
   </div>
-  

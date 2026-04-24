@@ -37,7 +37,7 @@
       </section>
   
       <section class="cards-grid">
-        <div class="info-card"><div class="card-body"><span class="card-label">Employee ID</span><span class="card-value">{{ currentUser?.id | slice:0:10 | uppercase }}</span></div></div>
+        <div class="info-card"><div class="card-body"><span class="card-label">Employee ID</span><span class="card-value">{{ currentUser?.id }}</span></div></div>
         <div class="info-card"><div class="card-body"><span class="card-label">Employee Number</span><span class="card-value">EMP-{{ employeeNumber }}</span></div></div>
         <div class="info-card"><div class="card-body"><span class="card-label">Email</span><span class="card-value card-value--email">{{ currentUser?.email }}</span></div></div>
         <div class="info-card"><div class="card-body"><span class="card-label">Total Departments</span><span class="card-value">{{ departments.length }}</span></div></div>
@@ -72,7 +72,7 @@
     <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
       <div class="modal-header"><h3>Delete Department</h3><button class="modal-close" (click)="cancelDeleteDept()">✕</button></div>
       <div class="modal-body">
-        <p class="confirm-text">Are you sure you want to delete <strong>{{ deptToDelete?.name }}</strong>? This cannot be undone.</p>
+        <p class="confirm-text">Are you sure you want to delete <strong>{{ deptToDelete.name }}</strong>? This cannot be undone.</p>
         <div class="confirm-actions">
           <button class="cancel-btn" (click)="cancelDeleteDept()">Cancel</button>
           <button class="delete-btn" (click)="deleteDepartment()">Delete</button>
@@ -105,4 +105,3 @@
       </div>
     </div>
   </div>
-  
