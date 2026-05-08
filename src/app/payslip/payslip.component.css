@@ -272,3 +272,26 @@ select.modal-input option { background: var(--surface2); }
   .main-content { padding: 20px 16px; }
   .form-row { grid-template-columns: 1fr; }
 }
+
+.section-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.auto-label {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+  font-size: 0.73rem;
+}
+
+.readonly-input {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

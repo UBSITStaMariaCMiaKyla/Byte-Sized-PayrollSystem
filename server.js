@@ -204,7 +204,6 @@ app.post('/api/employees', auth, async (req, res) => {
     );
     if (exists.length) return res.json({ success: false, message: 'An employee with this email already exists.' });
 
-    // Generate emp_no after insert (uses the new ID)
     const [result] = await conn.query(
       'INSERT INTO employees (Department_id, emp_no, last_name, first_name, middle_name, gender, email) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [Department_id, 'TEMP', last_name.trim(), first_name.trim(), middle_name?.trim() || null, gender || 'Prefer not to say', email.trim()]
@@ -223,7 +222,6 @@ app.post('/api/employees', auth, async (req, res) => {
 app.delete('/api/employees/:id', auth, async (req, res) => {
   const conn = await pool.getConnection();
   try {
-    // Cascade: delete salary records
     await conn.query('DELETE FROM employee_salary WHERE Employee_id = ?', [req.params.id]);
     const [result] = await conn.query('DELETE FROM employees WHERE Employee_id = ?', [req.params.id]);
     if (!result.affectedRows) return res.status(404).json({ message: 'Employee not found.' });
@@ -239,9 +237,7 @@ app.delete('/api/employees/:id', auth, async (req, res) => {
 
 // GET /api/salaries
 app.get('/api/salaries', auth, async (req, res) => {
-  const [rows] = await pool.query(
-    'SELECT * FROM employee_salary ORDER BY effective_date DESC'
-  );
+  const [rows] = await pool.query('SELECT * FROM employee_salary ORDER BY effective_date DESC');
   res.json(rows);
 });
 
@@ -329,7 +325,6 @@ app.post('/api/payrolls', auth, async (req, res) => {
 app.delete('/api/payrolls/:id', auth, async (req, res) => {
   const conn = await pool.getConnection();
   try {
-    // Cascade: delete payslips
     await conn.query('DELETE FROM payslip WHERE Payroll_id = ?', [req.params.id]);
     const [result] = await conn.query('DELETE FROM payroll WHERE Payroll_id = ?', [req.params.id]);
     if (!result.affectedRows) return res.status(404).json({ message: 'Payroll not found.' });
@@ -369,7 +364,12 @@ app.get('/api/payslips/employee/:empId', auth, async (req, res) => {
 
 // POST /api/payslips
 app.post('/api/payslips', auth, async (req, res) => {
-  const { Payroll_id, Employee_id, gross_pay, total_deductions } = req.body;
+  const {
+    Payroll_id, Employee_id, gross_pay, total_deductions,
+    hours_worked, overtime_hours, overtime_pay,
+    sss_deduction, philhealth_deduction, pagibig_deduction, tax_deduction
+  } = req.body;
+
   if (!Payroll_id) return res.status(400).json({ success: false, message: 'Select a payroll period.' });
   if (!Employee_id) return res.status(400).json({ success: false, message: 'Select an employee.' });
   if (Number(gross_pay) < 0) return res.status(400).json({ success: false, message: 'Gross pay cannot be negative.' });
@@ -383,10 +383,19 @@ app.post('/api/payslips', auth, async (req, res) => {
     return res.json({ success: false, message: 'A payslip for this employee in this payroll period already exists.' });
   }
 
-  const net_pay = Math.max(0, Number(gross_pay) - Number(total_deductions));
+  // net_pay is a generated column in MySQL — do NOT insert it manually
   const [result] = await pool.query(
-    'INSERT INTO payslip (Payroll_id, Employee_id, gross_pay, total_deductions, net_pay) VALUES (?, ?, ?, ?, ?)',
-    [Payroll_id, Employee_id, gross_pay, total_deductions, net_pay]
+    `INSERT INTO payslip
+      (Payroll_id, Employee_id, gross_pay, total_deductions,
+       hours_worked, overtime_hours, overtime_pay,
+       sss_deduction, philhealth_deduction, pagibig_deduction, tax_deduction)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      Payroll_id, Employee_id, gross_pay, total_deductions,
+      hours_worked ?? null, overtime_hours ?? null, overtime_pay ?? null,
+      sss_deduction ?? null, philhealth_deduction ?? null,
+      pagibig_deduction ?? null, tax_deduction ?? null
+    ]
   );
   const [newSlip] = await pool.query('SELECT * FROM payslip WHERE Payslip_id = ?', [result.insertId]);
   res.status(201).json({ success: true, payslip: newSlip[0] });

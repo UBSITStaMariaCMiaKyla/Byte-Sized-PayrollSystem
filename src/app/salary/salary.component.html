@@ -21,23 +21,23 @@
         </div>
       </div>
     </nav>
-  
+
     <main class="main-content">
       <div class="page-header-row">
         <div>
           <h1 class="page-title">Salary Records</h1>
-          <p class="page-sub">Employee monthly salary history</p>
+          <p class="page-sub">Employee hourly rate history</p>
         </div>
         <button class="add-btn" (click)="openAdd()">＋ Add Salary Record</button>
       </div>
-  
+
       <div class="empty-state" *ngIf="salaryRows.length === 0">
         <div class="empty-icon">💰</div>
         <p class="empty-title">No salary records yet</p>
         <p class="empty-sub">Add a salary record to get started.</p>
         <button class="add-btn" (click)="openAdd()">＋ Add Salary Record</button>
       </div>
-  
+
       <div class="table-wrap" *ngIf="salaryRows.length > 0">
         <table class="data-table">
           <thead>
@@ -46,7 +46,7 @@
               <th>Emp No.</th>
               <th>Employee Name</th>
               <th>Department</th>
-              <th>Monthly Salary</th>
+              <th>Hourly Rate</th>
               <th>Effective Date</th>
             </tr>
           </thead>
@@ -56,7 +56,7 @@
               <td class="mono">{{ row.emp_no }}</td>
               <td class="name-cell">{{ row.full_name }}</td>
               <td>{{ row.dept_name }}</td>
-              <td class="amount-cell">₱ {{ row.monthly_salary | number:'1.2-2' }}</td>
+              <td class="amount-cell">₱ {{ row.monthly_salary | number:'1.2-2' }}/hr</td>
               <td class="date-cell">{{ row.effective_date }}</td>
             </tr>
           </tbody>
@@ -64,7 +64,7 @@
       </div>
     </main>
   </div>
-  
+
   <!-- Add Salary Modal -->
   <div class="modal-overlay" *ngIf="showAddModal" (click)="closeAdd()">
     <div class="modal-card" (click)="$event.stopPropagation()">
@@ -78,8 +78,8 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Monthly Salary (₱) *</label>
-          <input type="number" [(ngModel)]="newRecord.monthly_salary" min="1" step="0.01" placeholder="e.g. 25000.00" class="modal-input" />
+          <label>Hourly Rate (₱) *</label>
+          <input type="number" [(ngModel)]="newRecord.monthly_salary" min="1" step="0.01" placeholder="e.g. 100.00" class="modal-input" />
         </div>
         <div class="form-group">
           <label>Effective Date *</label>
@@ -90,7 +90,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- Privacy Modal -->
   <div class="modal-overlay" *ngIf="showPrivacyModal" (click)="closePrivacy()">
     <div class="modal-card" (click)="$event.stopPropagation()">
@@ -102,4 +102,3 @@
       </div>
     </div>
   </div>
-  
