@@ -24,13 +24,13 @@
         </div>
       </div>
     </nav>
-  
+
     <main class="main-content">
       <section class="dept-hero">
         <div class="dept-hero-info">
           <span class="dept-hero-id">Dept ID: {{ department?.Department_id }}</span>
           <h1 class="dept-hero-name">{{ department?.name }}</h1>
-          <span class="dept-hero-count">{{ employees.length }} {{ employees.length === 1 ? 'employee' : 'employees' }}</span>
+          <span class="dept-hero-count">{{ activeEmployees.length }} {{ activeEmployees.length === 1 ? 'employee' : 'employees' }}</span>
         </div>
         <div class="dept-hero-actions">
           <button class="action-btn" routerLink="/payroll">Payroll</button>
@@ -38,21 +38,21 @@
           <button class="action-btn" routerLink="/salary">Salary</button>
         </div>
       </section>
-  
+
       <section class="employees-section">
         <div class="section-header">
           <h3 class="section-title">Employees</h3>
           <button class="add-btn" (click)="openAddEmployee()">＋ Add Employee</button>
         </div>
-  
-        <div class="empty-state" *ngIf="employees.length === 0">
+
+        <div class="empty-state" *ngIf="activeEmployees.length === 0">
           <div class="empty-icon-wrap">👤</div>
-          <p class="empty-title">No employees listed</p>
-          <p class="empty-sub">This department has no employees yet.</p>
+          <p class="empty-title">No active employees</p>
+          <p class="empty-sub">This department has no active employees yet.</p>
           <button class="add-btn" (click)="openAddEmployee()">＋ Add First Employee</button>
         </div>
-  
-        <div class="table-wrap" *ngIf="employees.length > 0">
+
+        <div class="table-wrap" *ngIf="activeEmployees.length > 0">
           <table class="emp-table">
             <thead>
               <tr>
@@ -64,7 +64,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let emp of employees" class="emp-row">
+              <tr *ngFor="let emp of activeEmployees" class="emp-row">
                 <td class="emp-num">{{ emp.emp_no }}</td>
                 <td class="emp-name">
                   <div class="emp-avatar-sm">{{ getEmpInitials(emp) }}</div>
@@ -75,25 +75,59 @@
                 <td class="emp-gender">{{ emp.gender }}</td>
                 <td class="emp-actions">
                   <button class="edit-btn" (click)="openEditEmployee(emp)">Edit</button>
-                  <button class="remove-btn" (click)="confirmRemove(emp)">Remove</button>
+                  <button class="remove-btn" (click)="confirmDeactivate(emp)">Deactivate</button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- Inactive employees section -->
+        <div *ngIf="inactiveEmployees.length > 0" style="margin-top: 2rem;">
+          <h4 class="section-title" style="opacity: 0.5;">Inactive Employees</h4>
+          <div class="table-wrap">
+            <table class="emp-table">
+              <thead>
+                <tr>
+                  <th>Emp No.</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Gender</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let emp of inactiveEmployees" class="emp-row" style="opacity: 0.5;">
+                  <td class="emp-num">{{ emp.emp_no }}</td>
+                  <td class="emp-name">
+                    <div class="emp-avatar-sm">{{ getEmpInitials(emp) }}</div>
+                    {{ emp.last_name }}, {{ emp.first_name }}
+                    <span class="emp-middle" *ngIf="emp.middle_name"> {{ emp.middle_name[0] }}.</span>
+                  </td>
+                  <td class="emp-email">{{ emp.email }}</td>
+                  <td class="emp-gender">{{ emp.gender }}</td>
+                  <td class="emp-actions">
+                    <button class="edit-btn" (click)="activateEmployee(emp)">Activate</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </section>
     </main>
   </div>
-  
-  <!-- Confirm Remove Modal -->
-  <div class="modal-overlay" *ngIf="empToRemove" (click)="cancelRemove()">
+
+  <!-- Confirm Deactivate Modal -->
+  <div class="modal-overlay" *ngIf="empToDeactivate" (click)="cancelDeactivate()">
     <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
-      <div class="modal-header"><h3>Remove Employee</h3><button class="modal-close" (click)="cancelRemove()">✕</button></div>
+      <div class="modal-header"><h3>Deactivate Employee</h3><button class="modal-close" (click)="cancelDeactivate()">✕</button></div>
       <div class="modal-body">
-        <p class="confirm-text">Remove <strong>{{ empToRemove.first_name }} {{ empToRemove.last_name }}</strong> from this department?</p>
+        <p class="confirm-text">Deactivate <strong>{{ empToDeactivate.first_name }} {{ empToDeactivate.last_name }}</strong>? The record will be preserved in the database but they will no longer appear as active.</p>
         <div class="confirm-actions">
-          <button class="cancel-btn" (click)="cancelRemove()">Cancel</button>
-          <button class="delete-btn" (click)="removeEmployee()">Remove</button>
+          <button class="cancel-btn" (click)="cancelDeactivate()">Cancel</button>
+          <button class="delete-btn" (click)="deactivateEmployee()">Deactivate</button>
         </div>
       </div>
     </div>
@@ -123,7 +157,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- Add Employee Modal -->
   <div class="modal-overlay" *ngIf="showAddEmpModal" (click)="closeAddEmployee()">
     <div class="modal-card" (click)="$event.stopPropagation()">
@@ -148,7 +182,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- Privacy Modal -->
   <div class="modal-overlay" *ngIf="showPrivacyModal" (click)="closePrivacySettings()">
     <div class="modal-card" (click)="$event.stopPropagation()">

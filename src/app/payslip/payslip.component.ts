@@ -1,7 +1,7 @@
 // src/app/payslip/payslip.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../login-page/auth.service';
 import { ApiService } from '../api.service';
@@ -48,8 +48,6 @@ export class PayslipComponent implements OnInit {
   newRecord = this.blank();
 
   private currentHourlyRate = 0;
-
-  slipToDelete: Payslip | null = null;
 
   constructor(
     private authService: AuthService,
@@ -250,17 +248,6 @@ export class PayslipComponent implements OnInit {
         this.closeAdd();
       },
       error: () => { this.addError = 'Failed to add payslip. Please try again.'; }
-    });
-  }
-
-  confirmDelete(s: Payslip): void { this.slipToDelete = s; }
-  cancelDelete(): void { this.slipToDelete = null; }
-
-  deleteSlip(): void {
-    if (!this.slipToDelete) return;
-    this.api.deletePayslip(this.slipToDelete.Payslip_id).subscribe({
-      next: () => { this.load(); this.slipToDelete = null; },
-      error: () => { alert('Failed to delete payslip.'); this.slipToDelete = null; }
     });
   }
 

@@ -21,7 +21,7 @@
         </div>
       </div>
     </nav>
-  
+
     <main class="main-content">
       <section class="profile-hero">
         <div class="profile-badge">
@@ -35,14 +35,14 @@
         </div>
         <div class="profile-decoration"></div>
       </section>
-  
+
       <section class="cards-grid">
         <div class="info-card"><div class="card-body"><span class="card-label">Employee ID</span><span class="card-value">{{ currentUser?.id }}</span></div></div>
         <div class="info-card"><div class="card-body"><span class="card-label">Employee Number</span><span class="card-value">EMP-{{ employeeNumber }}</span></div></div>
         <div class="info-card"><div class="card-body"><span class="card-label">Email</span><span class="card-value card-value--email">{{ currentUser?.email }}</span></div></div>
         <div class="info-card"><div class="card-body"><span class="card-label">Total Departments</span><span class="card-value">{{ departments.length }}</span></div></div>
       </section>
-  
+
       <section class="departments-section">
         <div class="section-header">
           <h3 class="section-title">Departments</h3>
@@ -58,7 +58,7 @@
               <span class="dept-count">{{ dept.headcount }} {{ dept.headcount === 1 ? 'employee' : 'employees' }}</span>
               <div class="dept-actions">
                 <span class="dept-arrow">→</span>
-                <button class="dept-delete-btn" (click)="confirmDeleteDept(dept, $event)" title="Delete department">✕</button>
+                <button class="dept-deactivate-btn" (click)="confirmDeactivateDept(dept, $event)" title="Deactivate department">Deactivate</button>
               </div>
             </div>
           </div>
@@ -66,21 +66,21 @@
       </section>
     </main>
   </div>
-  
-  <!-- Confirm Delete Dept Modal -->
-  <div class="modal-overlay" *ngIf="deptToDelete" (click)="cancelDeleteDept()">
+
+  <!-- Confirm Deactivate Dept Modal -->
+  <div class="modal-overlay" *ngIf="deptToDeactivate" (click)="cancelDeactivateDept()">
     <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
-      <div class="modal-header"><h3>Delete Department</h3><button class="modal-close" (click)="cancelDeleteDept()">✕</button></div>
+      <div class="modal-header"><h3>Deactivate Department</h3><button class="modal-close" (click)="cancelDeactivateDept()">✕</button></div>
       <div class="modal-body">
-        <p class="confirm-text">Are you sure you want to delete <strong>{{ deptToDelete.name }}</strong>? This cannot be undone.</p>
+        <p class="confirm-text">Are you sure you want to deactivate <strong>{{ deptToDeactivate.name }}</strong>? It will be hidden from the dashboard but the record will be preserved in the database.</p>
         <div class="confirm-actions">
-          <button class="cancel-btn" (click)="cancelDeleteDept()">Cancel</button>
-          <button class="delete-btn" (click)="deleteDepartment()">Delete</button>
+          <button class="cancel-btn" (click)="cancelDeactivateDept()">Cancel</button>
+          <button class="delete-btn" (click)="deactivateDepartment()">Deactivate</button>
         </div>
       </div>
     </div>
   </div>
-  
+
   <!-- Add Department Modal -->
   <div class="modal-overlay" *ngIf="showAddDeptModal" (click)="closeAddDepartment()">
     <div class="modal-card" (click)="$event.stopPropagation()">
@@ -92,7 +92,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- Privacy Modal -->
   <div class="modal-overlay" *ngIf="showPrivacyModal" (click)="closePrivacySettings()">
     <div class="modal-card" (click)="$event.stopPropagation()">

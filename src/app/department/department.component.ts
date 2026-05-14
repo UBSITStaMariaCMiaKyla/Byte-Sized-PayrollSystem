@@ -36,18 +36,14 @@ export class DepartmentComponent implements OnInit {
   addEmpError = '';
   newEmp = this.blankEmp();
 
-  empToRemove: Employee | null = null;
+  empToDeactivate: Employee | null = null;
 
-  // ── Edit ────────────────────────────────────────────────
   showEditEmpModal = false;
   editEmpError = '';
   editEmp: {
     Employee_id: number;
-    first_name: string;
-    last_name: string;
-    middle_name: string;
-    email: string;
-    gender: Employee['gender'];
+    first_name: string; last_name: string; middle_name: string;
+    email: string; gender: Employee['gender'];
   } = this.blankEditEmp();
 
   constructor(
@@ -79,10 +75,19 @@ export class DepartmentComponent implements OnInit {
 
   private loadEmployees(): void {
     if (!this.department) return;
+    // Load all employees for this dept (active and inactive)
     this.api.getEmployeesByDept(this.department.Department_id).subscribe({
       next: (emps) => { this.employees = emps; },
       error: (err) => { console.error('Failed to load employees', err); }
     });
+  }
+
+  get activeEmployees(): Employee[] {
+    return this.employees.filter(e => e.active === 1);
+  }
+
+  get inactiveEmployees(): Employee[] {
+    return this.employees.filter(e => e.active === 0);
   }
 
   getInitials(): string {
@@ -120,8 +125,7 @@ export class DepartmentComponent implements OnInit {
 
   private blankEditEmp() {
     return {
-      Employee_id: 0,
-      first_name: '', last_name: '', middle_name: '',
+      Employee_id: 0, first_name: '', last_name: '', middle_name: '',
       email: '', gender: 'Prefer not to say' as Employee['gender']
     };
   }
@@ -137,29 +141,23 @@ export class DepartmentComponent implements OnInit {
 
     this.api.addEmployee({
       Department_id: this.department!.Department_id,
-      first_name: first_name.trim(),
-      last_name: last_name.trim(),
+      first_name: first_name.trim(), last_name: last_name.trim(),
       middle_name: this.newEmp.middle_name?.trim() || undefined,
-      email: email.trim(),
-      gender: gender ?? undefined
+      email: email.trim(), gender: gender ?? undefined
     }).subscribe({
       next: (res) => {
         if (!res.success) { this.addEmpError = res.message; return; }
-        this.loadEmployees();
-        this.closeAddEmployee();
+        this.loadEmployees(); this.closeAddEmployee();
       },
       error: () => { this.addEmpError = 'Failed to add employee. Please try again.'; }
     });
   }
 
-  // ── Edit Employee ────────────────────────────────────────
   openEditEmployee(emp: Employee): void {
     this.editEmp = {
       Employee_id: emp.Employee_id,
-      first_name: emp.first_name,
-      last_name: emp.last_name,
-      middle_name: emp.middle_name ?? '',
-      email: emp.email ?? '',
+      first_name: emp.first_name, last_name: emp.last_name,
+      middle_name: emp.middle_name ?? '', email: emp.email ?? '',
       gender: emp.gender ?? 'Prefer not to say'
     };
     this.editEmpError = '';
@@ -175,29 +173,33 @@ export class DepartmentComponent implements OnInit {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { this.editEmpError = 'Enter a valid email address.'; return; }
 
     this.api.updateEmployee(this.editEmp.Employee_id, {
-      first_name: first_name.trim(),
-      last_name: last_name.trim(),
+      first_name: first_name.trim(), last_name: last_name.trim(),
       middle_name: this.editEmp.middle_name?.trim() || undefined,
-      email: email.trim(),
-      gender: gender ?? undefined
+      email: email.trim(), gender: gender ?? undefined
     }).subscribe({
       next: (res) => {
         if (!res.success) { this.editEmpError = res.message; return; }
-        this.loadEmployees();
-        this.closeEditEmployee();
+        this.loadEmployees(); this.closeEditEmployee();
       },
       error: () => { this.editEmpError = 'Failed to update employee. Please try again.'; }
     });
   }
 
-  confirmRemove(emp: Employee): void { this.empToRemove = emp; }
-  cancelRemove(): void { this.empToRemove = null; }
+  confirmDeactivate(emp: Employee): void { this.empToDeactivate = emp; }
+  cancelDeactivate(): void { this.empToDeactivate = null; }
 
-  removeEmployee(): void {
-    if (!this.empToRemove) return;
-    this.api.deleteEmployee(this.empToRemove.Employee_id).subscribe({
-      next: () => { this.loadEmployees(); this.empToRemove = null; },
-      error: () => { alert('Failed to remove employee.'); this.empToRemove = null; }
+  deactivateEmployee(): void {
+    if (!this.empToDeactivate) return;
+    this.api.deactivateEmployee(this.empToDeactivate.Employee_id).subscribe({
+      next: () => { this.loadEmployees(); this.empToDeactivate = null; },
+      error: () => { alert('Failed to deactivate employee.'); this.empToDeactivate = null; }
+    });
+  }
+
+  activateEmployee(emp: Employee): void {
+    this.api.activateEmployee(emp.Employee_id).subscribe({
+      next: () => { this.loadEmployees(); },
+      error: () => { alert('Failed to activate employee.'); }
     });
   }
 }

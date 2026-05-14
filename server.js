@@ -9,11 +9,9 @@ const jwt        = require('jsonwebtoken');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// ── Middleware ────────────────────────────────────────────────
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
 
-// ── MySQL connection pool ─────────────────────────────────────
 const pool = mysql.createPool({
   host:     process.env.DB_HOST,
   port:     Number(process.env.DB_PORT) || 3306,
@@ -24,7 +22,6 @@ const pool = mysql.createPool({
   connectionLimit:    10,
 });
 
-// ── Auth middleware ───────────────────────────────────────────
 function auth(req, res, next) {
   const header = req.headers['authorization'];
   const token  = header && header.split(' ')[1];
@@ -41,41 +38,29 @@ function auth(req, res, next) {
 // AUTH ROUTES
 // ═══════════════════════════════════════════════════════════════
 
-// POST /api/auth/register
 app.post('/api/auth/register', async (req, res) => {
   const { firstName, lastName, email, password, companyCode } = req.body;
   if (!firstName || !lastName || !email || !password || !companyCode) {
     return res.status(400).json({ success: false, message: 'All fields are required.' });
   }
-
   const conn = await pool.getConnection();
   try {
     const [rows] = await conn.query('SELECT id FROM users WHERE email = ?', [email]);
-    if (rows.length) {
-      return res.json({ success: false, message: 'An account with this email already exists.' });
-    }
-
+    if (rows.length) return res.json({ success: false, message: 'An account with this email already exists.' });
     const hashed = await bcrypt.hash(password, 10);
     const [result] = await conn.query(
       'INSERT INTO users (first_name, last_name, email, password_hash, company_code, role) VALUES (?, ?, ?, ?, ?, ?)',
       [firstName, lastName, email, hashed, companyCode, 'employee']
     );
-
     const newUser = { id: result.insertId, firstName, lastName, email, companyCode, role: 'employee' };
-    const token   = jwt.sign(newUser, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
+    const token = jwt.sign(newUser, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
     res.json({ success: true, token, user: newUser });
-  } finally {
-    conn.release();
-  }
+  } finally { conn.release(); }
 });
 
-// POST /api/auth/login
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ success: false, message: 'Email and password are required.' });
-  }
-
+  if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password are required.' });
   const conn = await pool.getConnection();
   try {
     const [rows] = await conn.query(
@@ -83,24 +68,19 @@ app.post('/api/auth/login', async (req, res) => {
       [email]
     );
     if (!rows.length) return res.json({ success: false, message: 'Invalid email or password.' });
-
     const user = rows[0];
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.json({ success: false, message: 'Invalid email or password.' });
-
     delete user.password_hash;
     const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
     res.json({ success: true, token, user });
-  } finally {
-    conn.release();
-  }
+  } finally { conn.release(); }
 });
 
 // ═══════════════════════════════════════════════════════════════
 // DEPARTMENT ROUTES
 // ═══════════════════════════════════════════════════════════════
 
-// GET /api/departments?activeOnly=true
 app.get('/api/departments', auth, async (req, res) => {
   const activeOnly = req.query.activeOnly !== 'false';
   const sql = activeOnly
@@ -110,47 +90,35 @@ app.get('/api/departments', auth, async (req, res) => {
   res.json(rows);
 });
 
-// GET /api/departments/:id
 app.get('/api/departments/:id', auth, async (req, res) => {
   const [rows] = await pool.query('SELECT * FROM department WHERE Department_id = ?', [req.params.id]);
   if (!rows.length) return res.status(404).json({ message: 'Department not found.' });
   res.json(rows[0]);
 });
 
-// GET /api/departments/:id/headcount
 app.get('/api/departments/:id/headcount', auth, async (req, res) => {
   const [[row]] = await pool.query(
-    'SELECT COUNT(*) AS headcount FROM employees WHERE Department_id = ?',
+    'SELECT COUNT(*) AS headcount FROM employees WHERE Department_id = ? AND active = 1',
     [req.params.id]
   );
   res.json({ headcount: row.headcount });
 });
 
-// POST /api/departments
 app.post('/api/departments', auth, async (req, res) => {
   const { name } = req.body;
   if (!name?.trim()) return res.status(400).json({ success: false, message: 'Department name is required.' });
-
   const [exists] = await pool.query(
     'SELECT Department_id FROM department WHERE LOWER(name) = LOWER(?) AND active = 1',
     [name.trim()]
   );
   if (exists.length) return res.json({ success: false, message: 'A department with this name already exists.' });
-
-  const [result] = await pool.query(
-    'INSERT INTO department (name, active) VALUES (?, 1)',
-    [name.trim()]
-  );
+  const [result] = await pool.query('INSERT INTO department (name, active) VALUES (?, 1)', [name.trim()]);
   const [newDept] = await pool.query('SELECT * FROM department WHERE Department_id = ?', [result.insertId]);
   res.status(201).json({ success: true, department: newDept[0] });
 });
 
-// PATCH /api/departments/:id/deactivate  (soft delete)
 app.patch('/api/departments/:id/deactivate', auth, async (req, res) => {
-  const [result] = await pool.query(
-    'UPDATE department SET active = 0 WHERE Department_id = ?',
-    [req.params.id]
-  );
+  const [result] = await pool.query('UPDATE department SET active = 0 WHERE Department_id = ?', [req.params.id]);
   if (!result.affectedRows) return res.status(404).json({ message: 'Department not found.' });
   res.json({ success: true });
 });
@@ -159,29 +127,26 @@ app.patch('/api/departments/:id/deactivate', auth, async (req, res) => {
 // EMPLOYEE ROUTES
 // ═══════════════════════════════════════════════════════════════
 
-// GET /api/employees
 app.get('/api/employees', auth, async (req, res) => {
   const [rows] = await pool.query('SELECT * FROM employees ORDER BY last_name, first_name');
   res.json(rows);
 });
 
-// GET /api/employees/by-dept/:deptId
 app.get('/api/employees/by-dept/:deptId', auth, async (req, res) => {
+  // Return ALL employees (active and inactive) so UI can show both
   const [rows] = await pool.query(
-    'SELECT * FROM employees WHERE Department_id = ? ORDER BY last_name, first_name',
+    'SELECT * FROM employees WHERE Department_id = ? ORDER BY active DESC, last_name, first_name',
     [req.params.deptId]
   );
   res.json(rows);
 });
 
-// GET /api/employees/:id
 app.get('/api/employees/:id', auth, async (req, res) => {
   const [rows] = await pool.query('SELECT * FROM employees WHERE Employee_id = ?', [req.params.id]);
   if (!rows.length) return res.status(404).json({ message: 'Employee not found.' });
   res.json(rows[0]);
 });
 
-// POST /api/employees
 app.post('/api/employees', auth, async (req, res) => {
   const { Department_id, first_name, last_name, middle_name, email, gender } = req.body;
   if (!first_name?.trim() || !last_name?.trim()) {
@@ -190,32 +155,21 @@ app.post('/api/employees', auth, async (req, res) => {
   if (!email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return res.status(400).json({ success: false, message: 'A valid email is required.' });
   }
-
   const conn = await pool.getConnection();
   try {
-    const [emailExists] = await conn.query(
-      'SELECT Employee_id FROM employees WHERE email = ?',
-      [email.trim()]
-    );
-    if (emailExists.length) {
-      return res.json({ success: false, message: 'An employee with this email already exists.' });
-    }
-
-    const [countRow] = await conn.query('SELECT COUNT(*) AS cnt FROM employees');
-    const empNo = 'EMP-' + String(countRow[0].cnt + 1).padStart(5, '0');
-
+    const [exists] = await conn.query('SELECT Employee_id FROM employees WHERE LOWER(email) = LOWER(?)', [email.trim()]);
+    if (exists.length) return res.json({ success: false, message: 'An employee with this email already exists.' });
     const [result] = await conn.query(
-      'INSERT INTO employees (Department_id, emp_no, first_name, last_name, middle_name, email, gender, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)',
-      [Department_id, empNo, first_name.trim(), last_name.trim(), middle_name?.trim() || null, email.trim(), gender || null]
+      'INSERT INTO employees (Department_id, emp_no, last_name, first_name, middle_name, gender, email, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)',
+      [Department_id, 'TEMP', last_name.trim(), first_name.trim(), middle_name?.trim() || null, gender || 'Prefer not to say', email.trim()]
     );
+    const empNo = `EMP-${String(result.insertId).padStart(5, '0')}`;
+    await conn.query('UPDATE employees SET emp_no = ? WHERE Employee_id = ?', [empNo, result.insertId]);
     const [newEmp] = await conn.query('SELECT * FROM employees WHERE Employee_id = ?', [result.insertId]);
     res.status(201).json({ success: true, employee: newEmp[0] });
-  } finally {
-    conn.release();
-  }
+  } finally { conn.release(); }
 });
 
-// PUT /api/employees/:id  ✅ NEW - Update employee
 app.put('/api/employees/:id', auth, async (req, res) => {
   const { first_name, last_name, middle_name, email, gender } = req.body;
   if (!first_name?.trim() || !last_name?.trim()) {
@@ -224,54 +178,41 @@ app.put('/api/employees/:id', auth, async (req, res) => {
   if (!email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return res.status(400).json({ success: false, message: 'A valid email is required.' });
   }
-
-  const conn = await pool.getConnection();
-  try {
-    // Check email not taken by another employee
-    const [emailExists] = await conn.query(
-      'SELECT Employee_id FROM employees WHERE email = ? AND Employee_id != ?',
-      [email.trim(), req.params.id]
-    );
-    if (emailExists.length) {
-      return res.json({ success: false, message: 'Another employee with this email already exists.' });
-    }
-
-    const [result] = await conn.query(
-      'UPDATE employees SET first_name = ?, last_name = ?, middle_name = ?, email = ?, gender = ? WHERE Employee_id = ?',
-      [first_name.trim(), last_name.trim(), middle_name?.trim() || null, email.trim(), gender || null, req.params.id]
-    );
-    if (!result.affectedRows) return res.status(404).json({ success: false, message: 'Employee not found.' });
-
-    const [updated] = await conn.query('SELECT * FROM employees WHERE Employee_id = ?', [req.params.id]);
-    res.json({ success: true, employee: updated[0] });
-  } finally {
-    conn.release();
-  }
+  const [exists] = await pool.query(
+    'SELECT Employee_id FROM employees WHERE LOWER(email) = LOWER(?) AND Employee_id != ?',
+    [email.trim(), req.params.id]
+  );
+  if (exists.length) return res.json({ success: false, message: 'Another employee with this email already exists.' });
+  await pool.query(
+    'UPDATE employees SET first_name = ?, last_name = ?, middle_name = ?, email = ?, gender = ? WHERE Employee_id = ?',
+    [first_name.trim(), last_name.trim(), middle_name?.trim() || null, email.trim(), gender || 'Prefer not to say', req.params.id]
+  );
+  res.json({ success: true, message: 'Employee updated.' });
 });
 
-// DELETE /api/employees/:id
-app.delete('/api/employees/:id', auth, async (req, res) => {
-  const conn = await pool.getConnection();
-  try {
-    const [result] = await conn.query('DELETE FROM employees WHERE Employee_id = ?', [req.params.id]);
-    if (!result.affectedRows) return res.status(404).json({ message: 'Employee not found.' });
-    res.json({ success: true });
-  } finally {
-    conn.release();
-  }
+// PATCH — deactivate employee (active = 0)
+app.patch('/api/employees/:id/deactivate', auth, async (req, res) => {
+  const [result] = await pool.query('UPDATE employees SET active = 0 WHERE Employee_id = ?', [req.params.id]);
+  if (!result.affectedRows) return res.status(404).json({ message: 'Employee not found.' });
+  res.json({ success: true });
+});
+
+// PATCH — activate employee (active = 1)
+app.patch('/api/employees/:id/activate', auth, async (req, res) => {
+  const [result] = await pool.query('UPDATE employees SET active = 1 WHERE Employee_id = ?', [req.params.id]);
+  if (!result.affectedRows) return res.status(404).json({ message: 'Employee not found.' });
+  res.json({ success: true });
 });
 
 // ═══════════════════════════════════════════════════════════════
 // EMPLOYEE SALARY ROUTES
 // ═══════════════════════════════════════════════════════════════
 
-// GET /api/salaries
 app.get('/api/salaries', auth, async (req, res) => {
   const [rows] = await pool.query('SELECT * FROM employee_salary ORDER BY effective_date DESC');
   res.json(rows);
 });
 
-// GET /api/salaries/employee/:empId
 app.get('/api/salaries/employee/:empId', auth, async (req, res) => {
   const [rows] = await pool.query(
     'SELECT * FROM employee_salary WHERE Employee_id = ? ORDER BY effective_date DESC',
@@ -280,7 +221,6 @@ app.get('/api/salaries/employee/:empId', auth, async (req, res) => {
   res.json(rows);
 });
 
-// GET /api/salaries/employee/:empId/current
 app.get('/api/salaries/employee/:empId/current', auth, async (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
   const [rows] = await pool.query(
@@ -291,7 +231,6 @@ app.get('/api/salaries/employee/:empId/current', auth, async (req, res) => {
   res.json(rows[0]);
 });
 
-// POST /api/salaries
 app.post('/api/salaries', auth, async (req, res) => {
   const { Employee_id, monthly_salary, effective_date } = req.body;
   if (!Employee_id) return res.status(400).json({ success: false, message: 'Employee is required.' });
@@ -299,15 +238,11 @@ app.post('/api/salaries', auth, async (req, res) => {
     return res.status(400).json({ success: false, message: 'Monthly salary must be greater than 0.' });
   }
   if (!effective_date) return res.status(400).json({ success: false, message: 'Effective date is required.' });
-
   const [exists] = await pool.query(
     'SELECT Salary_id FROM employee_salary WHERE Employee_id = ? AND effective_date = ?',
     [Employee_id, effective_date]
   );
-  if (exists.length) {
-    return res.json({ success: false, message: 'A salary record for this employee on this date already exists.' });
-  }
-
+  if (exists.length) return res.json({ success: false, message: 'A salary record for this employee on this date already exists.' });
   const [result] = await pool.query(
     'INSERT INTO employee_salary (Employee_id, monthly_salary, effective_date) VALUES (?, ?, ?)',
     [Employee_id, monthly_salary, effective_date]
@@ -320,20 +255,17 @@ app.post('/api/salaries', auth, async (req, res) => {
 // PAYROLL ROUTES
 // ═══════════════════════════════════════════════════════════════
 
-// GET /api/payrolls
 app.get('/api/payrolls', auth, async (req, res) => {
   const [rows] = await pool.query('SELECT * FROM payroll ORDER BY payroll_date DESC');
   res.json(rows);
 });
 
-// GET /api/payrolls/:id
 app.get('/api/payrolls/:id', auth, async (req, res) => {
   const [rows] = await pool.query('SELECT * FROM payroll WHERE Payroll_id = ?', [req.params.id]);
   if (!rows.length) return res.status(404).json({ message: 'Payroll not found.' });
   res.json(rows[0]);
 });
 
-// POST /api/payrolls
 app.post('/api/payrolls', auth, async (req, res) => {
   const { period_start, period_end, payroll_date } = req.body;
   if (!period_start || !period_end || !payroll_date) {
@@ -342,7 +274,6 @@ app.post('/api/payrolls', auth, async (req, res) => {
   if (period_end < period_start) {
     return res.status(400).json({ success: false, message: 'Period end must be on or after period start.' });
   }
-
   const [result] = await pool.query(
     'INSERT INTO payroll (period_start, period_end, payroll_date) VALUES (?, ?, ?)',
     [period_start, period_end, payroll_date]
@@ -351,39 +282,20 @@ app.post('/api/payrolls', auth, async (req, res) => {
   res.status(201).json({ success: true, payroll: newPayroll[0] });
 });
 
-// DELETE /api/payrolls/:id
-app.delete('/api/payrolls/:id', auth, async (req, res) => {
-  const conn = await pool.getConnection();
-  try {
-    await conn.query('DELETE FROM payslip WHERE Payroll_id = ?', [req.params.id]);
-    const [result] = await conn.query('DELETE FROM payroll WHERE Payroll_id = ?', [req.params.id]);
-    if (!result.affectedRows) return res.status(404).json({ message: 'Payroll not found.' });
-    res.json({ success: true });
-  } finally {
-    conn.release();
-  }
-});
-
 // ═══════════════════════════════════════════════════════════════
 // PAYSLIP ROUTES
 // ═══════════════════════════════════════════════════════════════
 
-// GET /api/payslips
 app.get('/api/payslips', auth, async (req, res) => {
   const [rows] = await pool.query('SELECT * FROM payslip ORDER BY Payslip_id DESC');
   res.json(rows);
 });
 
-// GET /api/payslips/payroll/:payrollId
 app.get('/api/payslips/payroll/:payrollId', auth, async (req, res) => {
-  const [rows] = await pool.query(
-    'SELECT * FROM payslip WHERE Payroll_id = ?',
-    [req.params.payrollId]
-  );
+  const [rows] = await pool.query('SELECT * FROM payslip WHERE Payroll_id = ?', [req.params.payrollId]);
   res.json(rows);
 });
 
-// GET /api/payslips/employee/:empId
 app.get('/api/payslips/employee/:empId', auth, async (req, res) => {
   const [rows] = await pool.query(
     'SELECT * FROM payslip WHERE Employee_id = ? ORDER BY Payslip_id DESC',
@@ -392,13 +304,10 @@ app.get('/api/payslips/employee/:empId', auth, async (req, res) => {
   res.json(rows);
 });
 
-// POST /api/payslips
 app.post('/api/payslips', auth, async (req, res) => {
-  const {
-    Payroll_id, Employee_id, gross_pay, total_deductions,
+  const { Payroll_id, Employee_id, gross_pay, total_deductions,
     hours_worked, overtime_hours, overtime_pay,
-    sss_deduction, philhealth_deduction, pagibig_deduction, tax_deduction
-  } = req.body;
+    sss_deduction, philhealth_deduction, pagibig_deduction, tax_deduction } = req.body;
 
   if (!Payroll_id) return res.status(400).json({ success: false, message: 'Select a payroll period.' });
   if (!Employee_id) return res.status(400).json({ success: false, message: 'Select an employee.' });
@@ -409,32 +318,22 @@ app.post('/api/payslips', auth, async (req, res) => {
     'SELECT Payslip_id FROM payslip WHERE Payroll_id = ? AND Employee_id = ?',
     [Payroll_id, Employee_id]
   );
-  if (exists.length) {
-    return res.json({ success: false, message: 'A payslip for this employee in this payroll period already exists.' });
-  }
+  if (exists.length) return res.json({ success: false, message: 'A payslip for this employee in this payroll period already exists.' });
 
+  // net_pay is a generated column — do NOT insert it
   const [result] = await pool.query(
-    `INSERT INTO payslip
+    `INSERT INTO payslip 
       (Payroll_id, Employee_id, gross_pay, total_deductions,
        hours_worked, overtime_hours, overtime_pay,
        sss_deduction, philhealth_deduction, pagibig_deduction, tax_deduction)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      Payroll_id, Employee_id, gross_pay, total_deductions,
-      hours_worked ?? null, overtime_hours ?? null, overtime_pay ?? null,
-      sss_deduction ?? null, philhealth_deduction ?? null,
-      pagibig_deduction ?? null, tax_deduction ?? null
-    ]
+    [Payroll_id, Employee_id, gross_pay, total_deductions,
+     hours_worked ?? null, overtime_hours ?? null, overtime_pay ?? null,
+     sss_deduction ?? null, philhealth_deduction ?? null,
+     pagibig_deduction ?? null, tax_deduction ?? null]
   );
   const [newSlip] = await pool.query('SELECT * FROM payslip WHERE Payslip_id = ?', [result.insertId]);
   res.status(201).json({ success: true, payslip: newSlip[0] });
-});
-
-// DELETE /api/payslips/:id
-app.delete('/api/payslips/:id', auth, async (req, res) => {
-  const [result] = await pool.query('DELETE FROM payslip WHERE Payslip_id = ?', [req.params.id]);
-  if (!result.affectedRows) return res.status(404).json({ message: 'Payslip not found.' });
-  res.json({ success: true });
 });
 
 // ── Health check ──────────────────────────────────────────────
@@ -447,7 +346,6 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
-// ── Start ─────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`Payroll API running → http://localhost:${PORT}`);
 });

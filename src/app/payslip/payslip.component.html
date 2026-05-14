@@ -50,7 +50,6 @@
               <th>Gross Pay</th>
               <th>Deductions</th>
               <th class="net-col">Net Pay</th>
-              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -63,28 +62,11 @@
               <td class="amount-cell">₱ {{ row.gross_pay | number:'1.2-2' }}</td>
               <td class="amount-cell deduct">₱ {{ row.total_deductions | number:'1.2-2' }}</td>
               <td class="amount-cell net">₱ {{ row.net_pay | number:'1.2-2' }}</td>
-              <td class="action-col">
-                <button class="remove-btn" (click)="confirmDelete(row)">Delete</button>
-              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </main>
-  </div>
-
-  <!-- Confirm Delete -->
-  <div class="modal-overlay" *ngIf="slipToDelete" (click)="cancelDelete()">
-    <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
-      <div class="modal-header"><h3>Delete Payslip</h3><button class="modal-close" (click)="cancelDelete()">✕</button></div>
-      <div class="modal-body">
-        <p class="confirm-text">Delete payslip <strong>#{{ slipToDelete.Payslip_id }}</strong>? This cannot be undone.</p>
-        <div class="confirm-actions">
-          <button class="cancel-btn" (click)="cancelDelete()">Cancel</button>
-          <button class="delete-btn" (click)="deleteSlip()">Delete</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Generate Payslip Modal -->
@@ -93,7 +75,6 @@
       <div class="modal-header"><h3>Generate Payslip</h3><button class="modal-close" (click)="closeAdd()">✕</button></div>
       <div class="modal-body">
 
-        <!-- Payroll Period -->
         <div class="form-group">
           <label>Payroll Period *</label>
           <select [(ngModel)]="newRecord.Payroll_id" class="modal-input">
@@ -102,7 +83,6 @@
           </select>
         </div>
 
-        <!-- Employee -->
         <div class="form-group">
           <label>Employee *</label>
           <select [(ngModel)]="newRecord.Employee_id" class="modal-input" (ngModelChange)="onEmployeeChange()">
@@ -111,10 +91,8 @@
           </select>
         </div>
 
-        <!-- Salary warning -->
         <div *ngIf="salaryWarning" class="form-error">{{ salaryWarning }}</div>
 
-        <!-- Hours -->
         <div class="form-row">
           <div class="form-group">
             <label>Hours Worked *</label>
@@ -128,19 +106,16 @@
           </div>
         </div>
 
-        <!-- Gross Pay (auto-computed) -->
         <div class="form-group">
           <label>Gross Pay (₱) <span class="auto-label">(auto-computed)</span></label>
           <input type="number" [value]="newRecord.gross_pay" readonly class="modal-input readonly-input" />
         </div>
 
-        <!-- Overtime Pay (auto-computed) -->
         <div class="form-group">
           <label>Overtime Pay (₱) <span class="auto-label">(auto-computed)</span></label>
           <input type="number" [value]="newRecord.overtime_pay" readonly class="modal-input readonly-input" />
         </div>
 
-        <!-- Deductions Section -->
         <div class="section-label">Deductions <span class="auto-label">(auto-computed, editable)</span></div>
         <div class="form-row">
           <div class="form-group">
@@ -163,13 +138,11 @@
           </div>
         </div>
 
-        <!-- Total Deductions (auto-computed) -->
         <div class="form-group">
           <label>Total Deductions (₱) <span class="auto-label">(auto-computed)</span></label>
           <input type="number" [value]="previewTotalDeductions" readonly class="modal-input readonly-input" />
         </div>
 
-        <!-- Net Pay Preview -->
         <div class="net-preview">
           <span class="net-label">Net Pay (computed)</span>
           <span class="net-value">₱ {{ previewNetPay | number:'1.2-2' }}</span>

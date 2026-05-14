@@ -33,7 +33,7 @@ export class DashboardComponent implements OnInit {
   showAddDeptModal = false;
   newDeptName = '';
   addDeptError = '';
-  deptToDelete: Department | null = null;
+  deptToDeactivate: Department | null = null;
 
   constructor(
     private authService: AuthService,
@@ -63,9 +63,7 @@ export class DashboardComponent implements OnInit {
           });
         });
       },
-      error: (err) => {
-        console.error('Failed to load departments', err);
-      }
+      error: (err) => { console.error('Failed to load departments', err); }
     });
   }
 
@@ -80,9 +78,7 @@ export class DashboardComponent implements OnInit {
 
   toggleDropdown(e: MouseEvent): void { e.stopPropagation(); this.dropdownOpen = !this.dropdownOpen; }
   closeDropdown(): void { this.dropdownOpen = false; }
-
   logout(): void { this.authService.logout(); this.router.navigate(['/login']); }
-
   openPrivacySettings(): void { this.dropdownOpen = false; this.showPrivacyModal = true; }
   closePrivacySettings(): void { this.showPrivacyModal = false; }
   savePrivacySettings(): void {
@@ -105,7 +101,6 @@ export class DashboardComponent implements OnInit {
   addDepartment(): void {
     const name = this.newDeptName.trim();
     if (!name) { this.addDeptError = 'Department name is required.'; return; }
-
     this.api.addDepartment(name).subscribe({
       next: (res) => {
         if (!res.success) { this.addDeptError = res.message; return; }
@@ -116,14 +111,14 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  confirmDeleteDept(dept: Department, e: MouseEvent): void { e.stopPropagation(); this.deptToDelete = dept; }
-  cancelDeleteDept(): void { this.deptToDelete = null; }
+  confirmDeactivateDept(dept: Department, e: MouseEvent): void { e.stopPropagation(); this.deptToDeactivate = dept; }
+  cancelDeactivateDept(): void { this.deptToDeactivate = null; }
 
-  deleteDepartment(): void {
-    if (!this.deptToDelete) return;
-    this.api.deactivateDepartment(this.deptToDelete.Department_id).subscribe({
-      next: () => { this.loadDepartments(); this.deptToDelete = null; },
-      error: () => { alert('Failed to delete department.'); this.deptToDelete = null; }
+  deactivateDepartment(): void {
+    if (!this.deptToDeactivate) return;
+    this.api.deactivateDepartment(this.deptToDeactivate.Department_id).subscribe({
+      next: () => { this.loadDepartments(); this.deptToDeactivate = null; },
+      error: () => { alert('Failed to deactivate department.'); this.deptToDeactivate = null; }
     });
   }
 }

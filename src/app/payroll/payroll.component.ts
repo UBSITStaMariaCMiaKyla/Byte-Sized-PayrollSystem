@@ -1,7 +1,7 @@
 // src/app/payroll/payroll.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../login-page/auth.service';
 import { ApiService } from '../api.service';
@@ -34,8 +34,6 @@ export class PayrollComponent implements OnInit {
   showAddModal = false;
   addError = '';
   newRecord = this.blank();
-
-  payrollToDelete: Payroll | null = null;
 
   constructor(
     private authService: AuthService,
@@ -85,17 +83,6 @@ export class PayrollComponent implements OnInit {
         this.closeAdd();
       },
       error: () => { this.addError = 'Failed to create payroll. Please try again.'; }
-    });
-  }
-
-  confirmDelete(p: Payroll): void { this.payrollToDelete = p; }
-  cancelDelete(): void { this.payrollToDelete = null; }
-
-  deletePayroll(): void {
-    if (!this.payrollToDelete) return;
-    this.api.deletePayroll(this.payrollToDelete.Payroll_id).subscribe({
-      next: () => { this.load(); this.payrollToDelete = null; },
-      error: () => { alert('Failed to delete payroll.'); this.payrollToDelete = null; }
     });
   }
 

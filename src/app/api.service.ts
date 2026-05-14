@@ -85,8 +85,18 @@ export class ApiService {
     );
   }
 
-  deleteEmployee(id: number): Observable<any> {
-    return this.http.delete(`${BASE_URL}/employees/${id}`, { headers: this.headers() });
+  deactivateEmployee(id: number): Observable<any> {
+    return this.http.patch(
+      `${BASE_URL}/employees/${id}/deactivate`, {},
+      { headers: this.headers() }
+    );
+  }
+
+  activateEmployee(id: number): Observable<any> {
+    return this.http.patch(
+      `${BASE_URL}/employees/${id}/activate`, {},
+      { headers: this.headers() }
+    );
   }
 
   // ── Salaries ────────────────────────────────────────────────
@@ -125,10 +135,6 @@ export class ApiService {
     return this.http.post(`${BASE_URL}/payrolls`, payload, { headers: this.headers() });
   }
 
-  deletePayroll(id: number): Observable<any> {
-    return this.http.delete(`${BASE_URL}/payrolls/${id}`, { headers: this.headers() });
-  }
-
   // ── Payslips ────────────────────────────────────────────────
   getPayslips(): Observable<any[]> {
     return this.http.get<any[]>(`${BASE_URL}/payslips`, { headers: this.headers() });
@@ -150,10 +156,6 @@ export class ApiService {
     tax_deduction?: number | null;
   }): Observable<any> {
     return this.http.post(`${BASE_URL}/payslips`, payload, { headers: this.headers() });
-  }
-
-  deletePayslip(id: number): Observable<any> {
-    return this.http.delete(`${BASE_URL}/payslips/${id}`, { headers: this.headers() });
   }
 
   // ── Health check ────────────────────────────────────────────
