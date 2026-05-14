@@ -1,6 +1,6 @@
 // src/app/payroll/payroll.component.ts
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../login-page/auth.service';
@@ -16,7 +16,7 @@ export interface Payroll {
 @Component({
   selector: 'app-payroll',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './payroll.component.html',
   styleUrl: './payroll.component.css'
 })
@@ -40,7 +40,8 @@ export class PayrollComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private api: ApiService
+    private api: ApiService,
+    private location: Location
   ) {}
 
   ngOnInit(): void {
@@ -97,6 +98,8 @@ export class PayrollComponent implements OnInit {
       error: () => { alert('Failed to delete payroll.'); this.payrollToDelete = null; }
     });
   }
+
+  goBack(): void { this.location.back(); }
 
   getInitials(): string {
     if (!this.currentUser) return '?';

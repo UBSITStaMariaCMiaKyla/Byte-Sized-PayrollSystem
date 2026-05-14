@@ -74,6 +74,7 @@
                 <td class="emp-email">{{ emp.email }}</td>
                 <td class="emp-gender">{{ emp.gender }}</td>
                 <td class="emp-actions">
+                  <button class="edit-btn" (click)="openEditEmployee(emp)">Edit</button>
                   <button class="remove-btn" (click)="confirmRemove(emp)">Remove</button>
                 </td>
               </tr>
@@ -97,6 +98,31 @@
       </div>
     </div>
   </div>
+
+  <!-- Edit Employee Modal -->
+  <div class="modal-overlay" *ngIf="showEditEmpModal" (click)="closeEditEmployee()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h3>Edit Employee</h3><button class="modal-close" (click)="closeEditEmployee()">✕</button></div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group"><label>First Name *</label><input type="text" [(ngModel)]="editEmp.first_name" placeholder="Juan" class="modal-input" /></div>
+          <div class="form-group"><label>Last Name *</label><input type="text" [(ngModel)]="editEmp.last_name" placeholder="Dela Cruz" class="modal-input" /></div>
+        </div>
+        <div class="form-group"><label>Middle Name</label><input type="text" [(ngModel)]="editEmp.middle_name" placeholder="Optional" class="modal-input" /></div>
+        <div class="form-group"><label>Email *</label><input type="email" [(ngModel)]="editEmp.email" placeholder="juan@company.com" class="modal-input" /></div>
+        <div class="form-group">
+          <label>Gender</label>
+          <select [(ngModel)]="editEmp.gender" class="modal-input">
+            <option>Male</option>
+            <option>Female</option>
+            <option>Prefer not to say</option>
+          </select>
+        </div>
+        <div *ngIf="editEmpError" class="form-error">{{ editEmpError }}</div>
+        <button class="save-btn" (click)="saveEditEmployee()">Save Changes</button>
+      </div>
+    </div>
+  </div>
   
   <!-- Add Employee Modal -->
   <div class="modal-overlay" *ngIf="showAddEmpModal" (click)="closeAddEmployee()">
@@ -107,12 +133,14 @@
           <div class="form-group"><label>First Name *</label><input type="text" [(ngModel)]="newEmp.first_name" placeholder="Juan" class="modal-input" /></div>
           <div class="form-group"><label>Last Name *</label><input type="text" [(ngModel)]="newEmp.last_name" placeholder="Dela Cruz" class="modal-input" /></div>
         </div>
+        <div class="form-group"><label>Middle Name</label><input type="text" [(ngModel)]="newEmp.middle_name" placeholder="Optional" class="modal-input" /></div>
         <div class="form-group"><label>Email *</label><input type="email" [(ngModel)]="newEmp.email" placeholder="juan@company.com" class="modal-input" /></div>
         <div class="form-group">
           <label>Gender</label>
           <select [(ngModel)]="newEmp.gender" class="modal-input">
             <option>Male</option>
             <option>Female</option>
+            <option>Prefer not to say</option>
           </select>
         </div>
         <div *ngIf="addEmpError" class="form-error">{{ addEmpError }}</div>

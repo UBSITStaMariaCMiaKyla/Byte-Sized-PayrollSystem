@@ -1,6 +1,4 @@
 // src/app/api.service.ts
-// Replaces all localStorage calls in DatabaseService with real HTTP calls to the Express API.
-
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -78,6 +76,15 @@ export class ApiService {
     return this.http.post(`${BASE_URL}/employees`, emp, { headers: this.headers() });
   }
 
+  updateEmployee(id: number, data: {
+    first_name: string; last_name: string;
+    middle_name?: string; email: string; gender?: string;
+  }): Observable<{ success: boolean; message: string }> {
+    return this.http.put<{ success: boolean; message: string }>(
+      `${BASE_URL}/employees/${id}`, data, { headers: this.headers() }
+    );
+  }
+
   deleteEmployee(id: number): Observable<any> {
     return this.http.delete(`${BASE_URL}/employees/${id}`, { headers: this.headers() });
   }
@@ -135,15 +142,15 @@ export class ApiService {
   }
 
   addPayslip(payload: {
-  Payroll_id: number; Employee_id: number;
-  gross_pay: number; total_deductions: number;
-  hours_worked?: number | null; overtime_hours?: number | null;
-  overtime_pay?: number | null; sss_deduction?: number | null;
-  philhealth_deduction?: number | null; pagibig_deduction?: number | null;
-  tax_deduction?: number | null;
-}): Observable<any> {
-  return this.http.post(`${BASE_URL}/payslips`, payload, { headers: this.headers() });
-}
+    Payroll_id: number; Employee_id: number;
+    gross_pay: number; total_deductions: number;
+    hours_worked?: number | null; overtime_hours?: number | null;
+    overtime_pay?: number | null; sss_deduction?: number | null;
+    philhealth_deduction?: number | null; pagibig_deduction?: number | null;
+    tax_deduction?: number | null;
+  }): Observable<any> {
+    return this.http.post(`${BASE_URL}/payslips`, payload, { headers: this.headers() });
+  }
 
   deletePayslip(id: number): Observable<any> {
     return this.http.delete(`${BASE_URL}/payslips/${id}`, { headers: this.headers() });

@@ -1,6 +1,6 @@
 // src/app/payslip/payslip.component.ts
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../login-page/auth.service';
@@ -26,7 +26,7 @@ interface PayslipRow extends Payslip {
 @Component({
   selector: 'app-payslip',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './payslip.component.html',
   styleUrl: './payslip.component.css'
 })
@@ -47,7 +47,6 @@ export class PayslipComponent implements OnInit {
   salaryWarning = '';
   newRecord = this.blank();
 
-  // stores the hourly rate fetched from employee_salary
   private currentHourlyRate = 0;
 
   slipToDelete: Payslip | null = null;
@@ -55,7 +54,8 @@ export class PayslipComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private api: ApiService
+    private api: ApiService,
+    private location: Location
   ) {}
 
   ngOnInit(): void {
@@ -89,21 +89,13 @@ export class PayslipComponent implements OnInit {
 
   private blank() {
     return {
-      Payroll_id: 0,
-      Employee_id: 0,
-      gross_pay: 0,
-      hours_worked: 0,
-      overtime_hours: 0,
-      overtime_pay: 0,
-      sss_deduction: 0,
-      philhealth_deduction: 0,
-      pagibig_deduction: 0,
-      tax_deduction: 0,
-      total_deductions: 0
+      Payroll_id: 0, Employee_id: 0, gross_pay: 0,
+      hours_worked: 0, overtime_hours: 0, overtime_pay: 0,
+      sss_deduction: 0, philhealth_deduction: 0,
+      pagibig_deduction: 0, tax_deduction: 0, total_deductions: 0
     };
   }
 
-  // ── SSS contribution table (2024) ───────────────────────────
   private computeSSS(monthlizedSalary: number): number {
     if (monthlizedSalary < 4250) return 180;
     if (monthlizedSalary < 4750) return 202.50;
@@ -150,19 +142,15 @@ export class PayslipComponent implements OnInit {
     return monthlizedSalary <= 1500 ? Math.round(monthlizedSalary * 0.01) : 100;
   }
 
-  // gross = hourly rate x hours worked
   private computeGrossPay(hours: number): number {
     return parseFloat((this.currentHourlyRate * hours).toFixed(2));
   }
 
-  // overtime pay = hourly rate x 1.25 x overtime hours
   private computeOvertimePay(overtimeHours: number): number {
     if (!this.currentHourlyRate || !overtimeHours) return 0;
     return parseFloat((this.currentHourlyRate * 1.25 * overtimeHours).toFixed(2));
   }
 
-  // monthlized salary = hourly rate x 8hrs x 22 days
-  // used only for computing SSS, PhilHealth, Pag-IBIG brackets
   private getMonthlizedSalary(): number {
     return this.currentHourlyRate * 8 * 22;
   }
@@ -185,7 +173,6 @@ export class PayslipComponent implements OnInit {
     this.api.getCurrentSalary(empId).subscribe({
       next: (sal) => {
         this.currentHourlyRate = Number(sal.monthly_salary);
-        // compute deductions based on monthlized salary for bracket purposes
         const monthlized = this.getMonthlizedSalary();
         this.newRecord.sss_deduction = this.computeSSS(monthlized);
         this.newRecord.philhealth_deduction = parseFloat(this.computePhilHealth(monthlized).toFixed(2));
@@ -202,7 +189,6 @@ export class PayslipComponent implements OnInit {
   onHoursChange(): void {
     const hours = Number(this.newRecord.hours_worked) || 0;
     this.newRecord.gross_pay = this.computeGrossPay(hours);
-    // recompute overtime in case hourly rate changed
     const otHours = Number(this.newRecord.overtime_hours) || 0;
     this.newRecord.overtime_pay = this.computeOvertimePay(otHours);
   }
@@ -243,7 +229,6 @@ export class PayslipComponent implements OnInit {
     const gross_pay = Number(this.newRecord.gross_pay);
     const overtime_pay = Number(this.newRecord.overtime_pay) || 0;
     const total_deductions = this.previewTotalDeductions;
-    // gross pay saved includes overtime pay
     const finalGross = parseFloat((gross_pay + overtime_pay).toFixed(2));
 
     this.api.addPayslip({
@@ -278,6 +263,8 @@ export class PayslipComponent implements OnInit {
       error: () => { alert('Failed to delete payslip.'); this.slipToDelete = null; }
     });
   }
+
+  goBack(): void { this.location.back(); }
 
   getInitials(): string {
     if (!this.currentUser) return '?';

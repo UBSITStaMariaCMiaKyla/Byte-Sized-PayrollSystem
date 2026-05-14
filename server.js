@@ -1,9 +1,4 @@
 // server.js — bytesized_payroll_system API server
-// Mirrors the localStorage DatabaseService schema in MySQL.
-//
-// Install deps:  npm install express mysql2 dotenv cors bcryptjs jsonwebtoken
-// Run:           node server.js
-
 require('dotenv').config();
 const express    = require('express');
 const mysql      = require('mysql2/promise');
@@ -198,21 +193,57 @@ app.post('/api/employees', auth, async (req, res) => {
 
   const conn = await pool.getConnection();
   try {
-    const [exists] = await conn.query(
-      'SELECT Employee_id FROM employees WHERE LOWER(email) = LOWER(?)',
+    const [emailExists] = await conn.query(
+      'SELECT Employee_id FROM employees WHERE email = ?',
       [email.trim()]
     );
-    if (exists.length) return res.json({ success: false, message: 'An employee with this email already exists.' });
+    if (emailExists.length) {
+      return res.json({ success: false, message: 'An employee with this email already exists.' });
+    }
+
+    const [countRow] = await conn.query('SELECT COUNT(*) AS cnt FROM employees');
+    const empNo = 'EMP-' + String(countRow[0].cnt + 1).padStart(5, '0');
 
     const [result] = await conn.query(
-      'INSERT INTO employees (Department_id, emp_no, last_name, first_name, middle_name, gender, email) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [Department_id, 'TEMP', last_name.trim(), first_name.trim(), middle_name?.trim() || null, gender || 'Prefer not to say', email.trim()]
+      'INSERT INTO employees (Department_id, emp_no, first_name, last_name, middle_name, email, gender, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)',
+      [Department_id, empNo, first_name.trim(), last_name.trim(), middle_name?.trim() || null, email.trim(), gender || null]
     );
-    const empNo = `EMP-${String(result.insertId).padStart(5, '0')}`;
-    await conn.query('UPDATE employees SET emp_no = ? WHERE Employee_id = ?', [empNo, result.insertId]);
-
     const [newEmp] = await conn.query('SELECT * FROM employees WHERE Employee_id = ?', [result.insertId]);
     res.status(201).json({ success: true, employee: newEmp[0] });
+  } finally {
+    conn.release();
+  }
+});
+
+// PUT /api/employees/:id  ✅ NEW - Update employee
+app.put('/api/employees/:id', auth, async (req, res) => {
+  const { first_name, last_name, middle_name, email, gender } = req.body;
+  if (!first_name?.trim() || !last_name?.trim()) {
+    return res.status(400).json({ success: false, message: 'First and last name are required.' });
+  }
+  if (!email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    return res.status(400).json({ success: false, message: 'A valid email is required.' });
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    // Check email not taken by another employee
+    const [emailExists] = await conn.query(
+      'SELECT Employee_id FROM employees WHERE email = ? AND Employee_id != ?',
+      [email.trim(), req.params.id]
+    );
+    if (emailExists.length) {
+      return res.json({ success: false, message: 'Another employee with this email already exists.' });
+    }
+
+    const [result] = await conn.query(
+      'UPDATE employees SET first_name = ?, last_name = ?, middle_name = ?, email = ?, gender = ? WHERE Employee_id = ?',
+      [first_name.trim(), last_name.trim(), middle_name?.trim() || null, email.trim(), gender || null, req.params.id]
+    );
+    if (!result.affectedRows) return res.status(404).json({ success: false, message: 'Employee not found.' });
+
+    const [updated] = await conn.query('SELECT * FROM employees WHERE Employee_id = ?', [req.params.id]);
+    res.json({ success: true, employee: updated[0] });
   } finally {
     conn.release();
   }
@@ -222,7 +253,6 @@ app.post('/api/employees', auth, async (req, res) => {
 app.delete('/api/employees/:id', auth, async (req, res) => {
   const conn = await pool.getConnection();
   try {
-    await conn.query('DELETE FROM employee_salary WHERE Employee_id = ?', [req.params.id]);
     const [result] = await conn.query('DELETE FROM employees WHERE Employee_id = ?', [req.params.id]);
     if (!result.affectedRows) return res.status(404).json({ message: 'Employee not found.' });
     res.json({ success: true });
@@ -383,7 +413,6 @@ app.post('/api/payslips', auth, async (req, res) => {
     return res.json({ success: false, message: 'A payslip for this employee in this payroll period already exists.' });
   }
 
-  // net_pay is a generated column in MySQL — do NOT insert it manually
   const [result] = await pool.query(
     `INSERT INTO payslip
       (Payroll_id, Employee_id, gross_pay, total_deductions,

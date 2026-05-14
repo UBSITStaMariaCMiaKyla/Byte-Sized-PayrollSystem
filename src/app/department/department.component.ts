@@ -1,6 +1,6 @@
 // src/app/department/department.component.ts
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../login-page/auth.service';
@@ -38,11 +38,24 @@ export class DepartmentComponent implements OnInit {
 
   empToRemove: Employee | null = null;
 
+  // ── Edit ────────────────────────────────────────────────
+  showEditEmpModal = false;
+  editEmpError = '';
+  editEmp: {
+    Employee_id: number;
+    first_name: string;
+    last_name: string;
+    middle_name: string;
+    email: string;
+    gender: Employee['gender'];
+  } = this.blankEditEmp();
+
   constructor(
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private api: ApiService
+    private api: ApiService,
+    private location: Location
   ) {}
 
   ngOnInit(): void {
@@ -81,7 +94,7 @@ export class DepartmentComponent implements OnInit {
     return ((emp.first_name?.[0] ?? '') + (emp.last_name?.[0] ?? '')).toUpperCase();
   }
 
-  goBack(): void { this.router.navigate(['/dashboard']); }
+  goBack(): void { this.location.back(); }
 
   toggleDropdown(e: MouseEvent): void { e.stopPropagation(); this.dropdownOpen = !this.dropdownOpen; }
   closeDropdown(): void { this.dropdownOpen = false; }
@@ -100,6 +113,14 @@ export class DepartmentComponent implements OnInit {
 
   private blankEmp() {
     return {
+      first_name: '', last_name: '', middle_name: '',
+      email: '', gender: 'Prefer not to say' as Employee['gender']
+    };
+  }
+
+  private blankEditEmp() {
+    return {
+      Employee_id: 0,
       first_name: '', last_name: '', middle_name: '',
       email: '', gender: 'Prefer not to say' as Employee['gender']
     };
@@ -128,6 +149,44 @@ export class DepartmentComponent implements OnInit {
         this.closeAddEmployee();
       },
       error: () => { this.addEmpError = 'Failed to add employee. Please try again.'; }
+    });
+  }
+
+  // ── Edit Employee ────────────────────────────────────────
+  openEditEmployee(emp: Employee): void {
+    this.editEmp = {
+      Employee_id: emp.Employee_id,
+      first_name: emp.first_name,
+      last_name: emp.last_name,
+      middle_name: emp.middle_name ?? '',
+      email: emp.email ?? '',
+      gender: emp.gender ?? 'Prefer not to say'
+    };
+    this.editEmpError = '';
+    this.showEditEmpModal = true;
+  }
+
+  closeEditEmployee(): void { this.showEditEmpModal = false; }
+
+  saveEditEmployee(): void {
+    const { first_name, last_name, email, gender } = this.editEmp;
+    if (!first_name.trim() || !last_name.trim()) { this.editEmpError = 'First and last name are required.'; return; }
+    if (!email.trim()) { this.editEmpError = 'Email is required.'; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { this.editEmpError = 'Enter a valid email address.'; return; }
+
+    this.api.updateEmployee(this.editEmp.Employee_id, {
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      middle_name: this.editEmp.middle_name?.trim() || undefined,
+      email: email.trim(),
+      gender: gender ?? undefined
+    }).subscribe({
+      next: (res) => {
+        if (!res.success) { this.editEmpError = res.message; return; }
+        this.loadEmployees();
+        this.closeEditEmployee();
+      },
+      error: () => { this.editEmpError = 'Failed to update employee. Please try again.'; }
     });
   }
 

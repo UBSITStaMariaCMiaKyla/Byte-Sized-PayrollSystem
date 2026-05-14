@@ -1,7 +1,8 @@
 // src/app/salary/salary.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../login-page/auth.service';
 import { ApiService } from '../api.service';
@@ -19,7 +20,7 @@ interface SalaryRow {
 @Component({
   selector: 'app-salary',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './salary.component.html',
   styleUrl: './salary.component.css'
 })
@@ -41,7 +42,8 @@ export class SalaryComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private api: ApiService
+    private api: ApiService,
+    private location: Location
   ) {}
 
   ngOnInit(): void {
@@ -99,6 +101,8 @@ export class SalaryComponent implements OnInit {
       error: () => { this.addError = 'Failed to save salary record. Please try again.'; }
     });
   }
+
+  goBack(): void { this.location.back(); }
 
   getInitials(): string {
     if (!this.currentUser) return '?';
