@@ -47,7 +47,7 @@ Make sure you have the following installed before running the project:
 ### Step 1 — Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/UBSITStaMariaCMiaKyla/Byte-Sized-PayrollSystem.git
 cd Byte-Sized-PayrollSystem
 ```
 
