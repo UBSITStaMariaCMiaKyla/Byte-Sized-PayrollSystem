@@ -33,7 +33,6 @@ export class DashboardComponent implements OnInit {
   showAddDeptModal = false;
   newDeptName = '';
   addDeptError = '';
-  deptToDeactivate: Department | null = null;
 
   constructor(
     private authService: AuthService,
@@ -108,17 +107,6 @@ export class DashboardComponent implements OnInit {
         this.closeAddDepartment();
       },
       error: () => { this.addDeptError = 'Failed to add department. Please try again.'; }
-    });
-  }
-
-  confirmDeactivateDept(dept: Department, e: MouseEvent): void { e.stopPropagation(); this.deptToDeactivate = dept; }
-  cancelDeactivateDept(): void { this.deptToDeactivate = null; }
-
-  deactivateDepartment(): void {
-    if (!this.deptToDeactivate) return;
-    this.api.deactivateDepartment(this.deptToDeactivate.Department_id).subscribe({
-      next: () => { this.loadDepartments(); this.deptToDeactivate = null; },
-      error: () => { alert('Failed to deactivate department.'); this.deptToDeactivate = null; }
     });
   }
 }

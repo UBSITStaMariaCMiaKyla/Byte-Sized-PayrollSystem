@@ -58,27 +58,12 @@
               <span class="dept-count">{{ dept.headcount }} {{ dept.headcount === 1 ? 'employee' : 'employees' }}</span>
               <div class="dept-actions">
                 <span class="dept-arrow">→</span>
-                <button class="dept-deactivate-btn" (click)="confirmDeactivateDept(dept, $event)" title="Deactivate department">Deactivate</button>
               </div>
             </div>
           </div>
         </div>
       </section>
     </main>
-  </div>
-
-  <!-- Confirm Deactivate Dept Modal -->
-  <div class="modal-overlay" *ngIf="deptToDeactivate" (click)="cancelDeactivateDept()">
-    <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
-      <div class="modal-header"><h3>Deactivate Department</h3><button class="modal-close" (click)="cancelDeactivateDept()">✕</button></div>
-      <div class="modal-body">
-        <p class="confirm-text">Are you sure you want to deactivate <strong>{{ deptToDeactivate.name }}</strong>? It will be hidden from the dashboard but the record will be preserved in the database.</p>
-        <div class="confirm-actions">
-          <button class="cancel-btn" (click)="cancelDeactivateDept()">Cancel</button>
-          <button class="delete-btn" (click)="deactivateDepartment()">Deactivate</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Add Department Modal -->

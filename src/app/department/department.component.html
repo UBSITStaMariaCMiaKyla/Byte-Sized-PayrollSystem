@@ -36,6 +36,7 @@
           <button class="action-btn" routerLink="/payroll">Payroll</button>
           <button class="action-btn" routerLink="/payslip">Payslip</button>
           <button class="action-btn" routerLink="/salary">Salary</button>
+          <button class="action-btn action-btn--danger" (click)="confirmDeactivateDept()">Deactivate Dept</button>
         </div>
       </section>
 
@@ -119,12 +120,26 @@
     </main>
   </div>
 
-  <!-- Confirm Deactivate Modal -->
+  <!-- Confirm Deactivate Department Modal -->
+  <div class="modal-overlay" *ngIf="showDeactivateDeptModal" (click)="cancelDeactivateDept()">
+    <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h3>Deactivate Department</h3><button class="modal-close" (click)="cancelDeactivateDept()">✕</button></div>
+      <div class="modal-body">
+        <p class="confirm-text">Are you sure you want to deactivate <strong>{{ department?.name }}</strong>?</p>
+        <div class="confirm-actions">
+          <button class="cancel-btn" (click)="cancelDeactivateDept()">Cancel</button>
+          <button class="delete-btn" (click)="deactivateDepartment()">Deactivate</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Deactivate Employee Modal -->
   <div class="modal-overlay" *ngIf="empToDeactivate" (click)="cancelDeactivate()">
     <div class="modal-card modal-card--sm" (click)="$event.stopPropagation()">
       <div class="modal-header"><h3>Deactivate Employee</h3><button class="modal-close" (click)="cancelDeactivate()">✕</button></div>
       <div class="modal-body">
-        <p class="confirm-text">Deactivate <strong>{{ empToDeactivate.first_name }} {{ empToDeactivate.last_name }}</strong>? The record will be preserved in the database but they will no longer appear as active.</p>
+        <p class="confirm-text">Deactivate <strong>{{ empToDeactivate.first_name }} {{ empToDeactivate.last_name }}</strong>?</p>
         <div class="confirm-actions">
           <button class="cancel-btn" (click)="cancelDeactivate()">Cancel</button>
           <button class="delete-btn" (click)="deactivateEmployee()">Deactivate</button>

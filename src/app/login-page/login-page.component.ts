@@ -16,13 +16,13 @@ export class LoginPageComponent {
   loginForm!: FormGroup;
   isLoading = false;
   errorMessage: string | null = null;
+  welcomeMessage: string | null = null;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router
   ) {
-    // Check if already logged in
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/dashboard']);
       return;
@@ -50,9 +50,10 @@ export class LoginPageComponent {
       next: (response: LoginResponse) => {
         this.isLoading = false;
         if (response.success) {
-          console.log('Login Success:', response.user);
-          alert(`Welcome back, ${response.user?.firstName}!`);
-          this.router.navigate(['/dashboard']);
+          this.welcomeMessage = `Welcome back, ${response.user?.firstName}!`;
+          setTimeout(() => {
+            this.router.navigate(['/dashboard']);
+          }, 1500);
         } else {
           this.errorMessage = response.message || 'Login failed';
         }

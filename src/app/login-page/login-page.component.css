@@ -154,3 +154,39 @@
 .login-link a:hover { opacity: 0.75; }
 
 .login-footer { margin-top: 28px; text-align: center; font-size: 0.72rem; color: #fabbc6; }
+/* ── Welcome Toast ────────────────────────────────────────── */
+.toast-wrapper {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  animation: toastIn 0.35s ease both;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  box-shadow: 0 8px 32px rgba(224,112,128,0.2);
+  white-space: nowrap;
+}
+
+.toast--success {
+  background: #fff9f5;
+  border: 1px solid rgba(224,112,128,0.35);
+  color: #2d1f1f;
+}
+
+.toast-icon { font-size: 1.1rem; }
+.toast-msg { color: #2d1f1f; }

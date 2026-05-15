@@ -1,62 +1,69 @@
 <!-- src/app/login-page/login-page.component.html -->
 
+<!-- ── Welcome Toast ────────────────────────────────────────── -->
+<div class="toast-wrapper" *ngIf="welcomeMessage">
+  <div class="toast toast--success">
+    <span class="toast-icon">🌸</span>
+    <span class="toast-msg">{{ welcomeMessage }}</span>
+  </div>
+</div>
+
 <div class="login-container">
-    <div class="login-card">
-      <div class="login-header">
-        <h1>Byte-Sized Payroll System</h1>
-        <p>Secure Employee Portal</p>
+  <div class="login-card">
+    <div class="login-header">
+      <h1>Byte-Sized Payroll System</h1>
+      <p>Secure Employee Portal</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+
+      <div *ngIf="errorMessage" class="error-banner">
+        {{ errorMessage }}
       </div>
-  
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-        
-        <div *ngIf="errorMessage" class="error-banner">
-          {{ errorMessage }}
-        </div>
-  
-        <div class="form-group">
-          <label for="email">Email Address</label>
-          <input 
-            type="email" 
-            id="email" 
-            formControlName="email"
-            placeholder="name@company.com"
-            [class.error-input]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-          >
-          <small *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="validation-error">
-            Please enter a valid email.
-          </small>
-        </div>
-  
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input 
-            type="password" 
-            id="password" 
-            formControlName="password"
-            placeholder="••••••••"
-          >
-        </div>
-  
-        <div class="form-actions">
-          <label class="checkbox-container">
-            <input type="checkbox" formControlName="rememberMe"> Remember me
-          </label>
-          <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
-        </div>
-  
-        <button type="submit" class="login-btn" [disabled]="isLoading">
-          {{ isLoading ? 'Authenticating...' : 'Log In' }}
-        </button>
-  
-        <!-- Sign Up Link -->
-        <div class="login-link">
-          Don't have an account? <a routerLink="/register">Sign Up</a>
-        </div>
-  
-      </form>
-      
-      <div class="login-footer">
-        <p>Protected by 256-bit SSL encryption.</p>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="name@company.com"
+          [class.error-input]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+        >
+        <small *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="validation-error">
+          Please enter a valid email.
+        </small>
       </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          formControlName="password"
+          placeholder="••••••••"
+        >
+      </div>
+
+      <div class="form-actions">
+        <label class="checkbox-container">
+          <input type="checkbox" formControlName="rememberMe"> Remember me
+        </label>
+        <a href="/forgot-password" class="forgot-link">Forgot Password?</a>
+      </div>
+
+      <button type="submit" class="login-btn" [disabled]="isLoading">
+        {{ isLoading ? 'Authenticating...' : 'Log In' }}
+      </button>
+
+      <div class="login-link">
+        Don't have an account? <a routerLink="/register">Sign Up</a>
+      </div>
+
+    </form>
+
+    <div class="login-footer">
+      <p>Protected by 256-bit SSL encryption.</p>
     </div>
   </div>
+</div>

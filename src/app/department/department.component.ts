@@ -38,6 +38,9 @@ export class DepartmentComponent implements OnInit {
 
   empToDeactivate: Employee | null = null;
 
+  // ── Deactivate Department ────────────────────────────────
+  showDeactivateDeptModal = false;
+
   showEditEmpModal = false;
   editEmpError = '';
   editEmp: {
@@ -75,7 +78,6 @@ export class DepartmentComponent implements OnInit {
 
   private loadEmployees(): void {
     if (!this.department) return;
-    // Load all employees for this dept (active and inactive)
     this.api.getEmployeesByDept(this.department.Department_id).subscribe({
       next: (emps) => { this.employees = emps; },
       error: (err) => { console.error('Failed to load employees', err); }
@@ -114,6 +116,21 @@ export class DepartmentComponent implements OnInit {
     }));
     alert('Privacy settings saved!');
     this.closePrivacySettings();
+  }
+
+  // ── Deactivate Department ────────────────────────────────
+  confirmDeactivateDept(): void { this.showDeactivateDeptModal = true; }
+  cancelDeactivateDept(): void { this.showDeactivateDeptModal = false; }
+
+  deactivateDepartment(): void {
+    if (!this.department) return;
+    this.api.deactivateDepartment(this.department.Department_id).subscribe({
+      next: () => {
+        this.showDeactivateDeptModal = false;
+        this.router.navigate(['/dashboard']);
+      },
+      error: () => { alert('Failed to deactivate department.'); }
+    });
   }
 
   private blankEmp() {
